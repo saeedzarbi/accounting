@@ -1,0 +1,103 @@
+<div style="font-family: BNazanin, Tahoma, sans-serif;
+            font-size: 14px;
+            text-align: justify;
+            direction: rtl;
+            line-height: 1.8">
+  <p style="text-align:center; font-size:18px; margin-bottom:16px;">
+    <strong>{{ deal_type_name }}</strong>
+  </p>
+  <p>
+    <strong>ماده 1 : طرفين قرارداد</strong>
+  </p>
+  <p>
+    <strong>1-1- موجرین:</strong>
+  </p>
+  {% for seller in seller_list %}
+    <p style="margin-right: 20px;">
+      {{ forloop.counter }}- موجر <strong>{{ seller.name }}</strong> فرزند <strong>{{ seller.father_name }}</strong> به شماره شناسنامه <strong>{{ seller.national_id }}</strong> صادره از <strong>{{ seller.city_of_issuance }}</strong> کد ملي <strong>{{ seller.national_id }}</strong> متولد <strong>{{ seller.birth_date }}</strong> ساکن <strong>{{ seller.address }}</strong> تلفن <strong>{{ seller.phone }}</strong> با وکالت/قيمومت/ولايت/وصايت ...... فرزند ...... به شماره شناسنامه ...... متولد ...... به موجب ......
+    </p>
+  {% endfor %}
+  <p>
+    <strong>2-1- مستأجر:</strong>
+  </p>
+  {% for buyer in buyer_list %}
+    <p style="margin-right: 20px;">
+      {{ forloop.counter }}- مستأجر <strong>{{ buyer.name }}</strong> فرزند <strong>{{ buyer.father_name }}</strong> به شماره شناسنامه <strong>{{ buyer.national_id }}</strong> صادره از <strong>{{ buyer.city_of_issuance }}</strong> کد ملي <strong>{{ buyer.national_id }}</strong> متولد <strong>{{ buyer.birth_date }}</strong> ساکن <strong>{{ buyer.address }}</strong> تلفن <strong>{{ buyer.phone }}</strong> با وکالت/قيمومت/ولايت/وصايت ...... فرزند ...... به شماره شناسنامه ...... متولد ...... بموجب ......
+    </p>
+  {% endfor %}
+  <p>
+    <strong>ماده 2: موضوع و مشخصات مورد اجاره</strong>
+  </p>
+  <p>
+    مورد اجاره عبارت است از <strong>{{ property.property_dang }}</strong> دانگ از <strong>{{ property.property_title }}</strong> داراي پلاک ثبتي شماره <strong>{{ property.registry_sub_number }}</strong> فرعي از <strong>{{ property.registry_main_number }}</strong> اصلي، قطعه <strong>{{ property.registry_piece_number }}</strong> واقع در بخش <strong>{{ property.registry_section }}</strong> حوزه ثبتي <strong>{{ property.registry_area }}</strong> به مساحت <strong>{{ property.area_m2 }}</strong> متر مربع دارای سند مالکیت به شماره سریال <strong>{{ property.deed_serial }}</strong> صفحه <strong>{{ property.deed_page }}</strong> دفتر <strong>{{ property.deed_book }}</strong> بانضمام <strong>{{ property.parking_dang }}</strong> دانگ پارکینگ شماره <strong>{{ property.parking_number }}</strong> فرعی و <strong>{{ property.storage_dang }}</strong> دانگ انبار شماره <strong>{{ property.storage_number }}</strong> فرعی از <strong>{{ property.registry_main_number }}</strong> اصلی. داراي حق اشتراک آب <strong>{{ property.water_share }}</strong> / برق <strong>{{ property.electricity_share }}</strong> / گاز <strong>{{ property.gas_share }}</strong>. تلفن به شماره <strong>{{ property.phone_numbers }}</strong> به نشاني <strong>{{ property.property_address }}</strong>.
+  </p>
+  <p>
+    <strong>ماده 3 : اجاره‌بها و ودیعه</strong>
+  </p>
+  <p>
+    1-3- اجاره‌بهای ماهانه مورد توافق طرفین مبلغ ...... ریال معادل ...... تومان وجه رایج مملکتی است که مستأجر متعهد است به صورت ...... (ماهانه / سه‌ماهه / شش‌ماهه / سالانه) و حداکثر تا ...... هر ماه به موجرین پرداخت نماید.
+  </p>
+  <p>
+    2-3- ودیعه به مبلغ ...... ریال معادل ...... تومان به عنوان تضمین اجرای تعهدات از ناحیه مستأجر در ابتدای قرارداد دریافت و موجرین متعهدند در پایان مدت اجاره و پس از تحویل صحیح و سالم مورد اجاره، ودیعه را پس از کسر خسارات احتمالی به مستأجر عودت نمایند.
+  </p>
+  <p>
+    <strong>تبصره 1 :</strong> تأخیر در پرداخت اجاره‌بها به ازای هر روز ...... ریال جریمه تأخیر به عهده مستأجر خواهد بود.
+  </p>
+  <p>
+    <strong>تبصره 2 :</strong> موجرین متعهد گردیدند مورد اجاره را در تاریخ ...... صحیح و سالم تحویل مستأجر دهند و مستأجر متعهد است در پایان مدت اجاره ملک را تخلیه و تحویل موجرین نماید.
+  </p>
+  <p>
+    <strong>ماده 4 : مدت اجاره</strong>
+  </p>
+  <p>1-4- مدت این قرارداد اجاره ...... ماه / سال از تاریخ ...... تا ...... می‌باشد.</p>
+  <p>2-4- در صورت تمدید، شرایط اجاره‌بها و ودیعه با توافق طرفین تعیین خواهد شد.</p>
+  <p>
+    <strong>ماده 5 : تحویل و تخلیه مورد اجاره</strong>
+  </p>
+  <p>
+    1-5- موجرین موظف هستند مورد اجاره را در تاریخ ...... با تمام توابع و ملحقات آن تحویل مستأجر دهند و هرگونه موانع در بهره‌برداری را برطرف کنند.
+  </p>
+  <p>
+    2-5- مستأجر موظف است در پایان مدت اجاره، مورد اجاره را بدون هرگونه دخل و تصرف غیرمجاز و با همان وضعیت تحویل (به استثنای فرسودگی عادی) تخلیه و به موجرین تحویل دهد.
+  </p>
+  <p>
+    3-5- در صورت عدم تخلیه به موقع، مستأجر به ازای هر روز تأخیر مبلغ ...... ریال به عنوان جریمه تأخیر تخلیه به موجرین پرداخت خواهد نمود.
+  </p>
+  <p>4-5- کلیه هزینه‌های ناشی از تحویل و تحویل‌گیری بر عهده ...... است، مگر اینکه به صورت دیگری توافق شده باشد.</p>
+  <p>
+    <strong>ماده 6 : تعهدات و آثار قرارداد</strong>
+  </p>
+  <p>
+    1-6- موجرین متعهدند در مدت اجاره از انتقال یا تغییر وضعیت ملک به گونه‌ای که به حق مستأجر لطمه وارد شود خودداری نمایند. در صورت تخلف، مستأجر حق فسخ و مطالبه خسارت را دارد.
+  </p>
+  <p>
+    2-6- مستأجر مجاز به واگذاری یا زیراجاره دادن تمام یا بخشی از مورد اجاره بدون رضایت کتبی موجرین نیست. در صورت تخلف، موجرین حق فسخ قرارداد را دارند.
+  </p>
+  <p>3-6- هزینه‌های آب، برق، گاز، تلفن و عوارض مربوط به دوره استفاده بر عهده مستأجر است.</p>
+  <p>4-6- کلیه خیارات از جمله خیار غبن به استثنای خیار تدلیس با اقرار طرفین اسقاط گردید.</p>
+  <p>
+    5-6- در صورت عدم اجرای تعهد از جانب هر یک از طرفین، طرف دیگر حق فسخ قرارداد را دارد و طرف متخلف ملزم به پرداخت خسارت خواهد بود.
+  </p>
+  <p>
+    <strong>ماده 7</strong>
+  </p>
+  <p>
+    حق‌الزحمه مشاور املاک طبق تعرفه کمیسون نظارت شهرستان ...... به طور جداگانه به عهده طرفین است که همزمان با امضای این قرارداد مبلغ ...... ریال پرداخت شده و رسید دریافت نمایند. فسخ یا اقاله قرارداد تأثیری در میزان حق‌الزحمه نخواهد داشت.
+  </p>
+  <p>
+    <strong>ماده 8</strong>
+  </p>
+  <p>
+    این قرارداد اجاره در تاریخ ...... در دفتر مشاور املاک ...... به نشاني ...... در سه نسخه بین طرفین تنظیم و امضا و مبادله گردید. مشاور املاک موظف است ضمن ممهور نمودن نسخ قرارداد به مهر مخصوص دفتر املاک، نسخه اول و دوم را به مستأجر و موجرین تسلیم نماید و نسخه سوم را در دفتر مخصوص بایگانی کند و هر سه نسخه دارای اعتبار یکسان است.
+  </p>
+  &nbsp;
+  <table style="width:100%; border:none;">
+    <tbody>
+      <tr>
+        <td style="text-align:center; width:33%;">امضاء موجرین</td>
+        <td style="text-align:center; width:33%;">امضاء مستأجر</td>
+        <td style="text-align:center; width:33%;">امضاء و مهر مشاور املاک</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

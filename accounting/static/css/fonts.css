@@ -1,0 +1,42 @@
+/* فونت‌های فارسی */
+@font-face {
+    font-family: 'BNazanin';
+    src: url('../fonts/Bnazanin.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'BNazanin';
+    src: url('../fonts/Bnazanin.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'BTitr';
+    src: url('../fonts/BTitr.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'IranNastaliq';
+    src: url('../fonts/IranNastaliq.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+body {
+    font-family: 'BNazanin', 'Tahoma', 'Arial', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    direction: rtl;
+    text-align: right;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}

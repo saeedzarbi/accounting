@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}ورود{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+  <div class="auth-wrapper">
+    <div class="auth-frame">
+      <section class="auth-panel-main">
+        <div class="auth-panel-main-inner">
+          <div class="auth-header">
+            <span class="auth-badge">ورود به سامانه</span>
+            <h1 class="page-title page-title--compact">ورود به حسابداری املاک</h1>
+            <p class="auth-subtitle">کنترل قراردادها، کمیسیون‌ها و جریان نقدی بنگاه شما در یک پنل یکپارچه.</p>
+            <div class="auth-tags">
+              <span class="pill auth-pill">دفتر املاک</span>
+              <span class="pill auth-pill">قراردادهای فروش و اجاره</span>
+              <span class="pill auth-pill">گزارش‌های مالی</span>
+            </div>
+          </div>
+          {% if messages %}
+            <div class="auth-alert mt-2">
+              {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+            </div>
+          {% endif %}
+          {% if form.non_field_errors %}
+            <div class="auth-alert mt-2">
+              {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+          {% endif %}
+          <form method="post" class="mt-4 auth-form" novalidate autocomplete="on">
+            {% csrf_token %}
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="{{ form.username.id_for_label }}">نام کاربری</label>
+                <div class="field">
+                  {{ form.username }}
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="{{ form.password.id_for_label }}">رمز عبور</label>
+                <div class="field">
+                  {{ form.password }}
+                </div>
+              </div>
+            </div>
+            <div class="auth-actions mt-4">
+              <label class="auth-remember">
+                <input type="checkbox" name="remember_me" class="auth-remember-input">
+                مرا به خاطر بسپار
+              </label>
+              <button type="button"
+                      class="btn-ghost text-xs"
+                      onclick="alert('بازیابی رمز از طریق مدیر سیستم انجام می‌شود.')">فراموشی رمز؟</button>
+            </div>
+            <div class="auth-support text-xs text-muted">در صورت نیاز به دسترسی جدید، با مدیر دفتر تماس بگیرید.</div>
+            <button type="submit" class="btn-primary mt-6">ورود</button>
+          </form>
+          <div class="auth-footer">
+            <div class="auth-security">
+              <span class="auth-dot" aria-hidden="true"></span>
+              ورود با رمزنگاری امن و ثبت تاریخچه ورودها
+            </div>
+            <span class="text-xs text-muted">نسخه 1.0 حسابداری املاک</span>
+          </div>
+        </div>
+      </section>
+      <section class="auth-panel-aside">
+        <div class="auth-aside-inner">
+          <div>
+            <span class="pill auth-aside-pill">پلتفرم تخصصی املاک</span>
+            <h2 class="auth-aside-title">مدیریت مالی بنگاه در یک نگاه</h2>
+            <p class="auth-aside-subtitle">از ثبت قرارداد تا پیگیری وصول، همه چیز شفاف و قابل گزارش‌گیری است.</p>
+            <div class="auth-feature-list">
+              <div class="auth-feature">
+                <div class="auth-feature-icon">%</div>
+                <div>
+                  <div class="auth-feature-title">محاسبه خودکار کمیسیون</div>
+                  <div class="auth-feature-sub">با نرخ‌های از پیش تعریف‌شده و بدون خطای انسانی.</div>
+                </div>
+              </div>
+              <div class="auth-feature">
+                <div class="auth-feature-icon">D</div>
+                <div>
+                  <div class="auth-feature-title">بایگانی قراردادها</div>
+                  <div class="auth-feature-sub">نسخه دیجیتال قراردادهای فروش و اجاره همیشه در دسترس است.</div>
+                </div>
+              </div>
+              <div class="auth-feature">
+                <div class="auth-feature-icon">R</div>
+                <div>
+                  <div class="auth-feature-title">داشبورد مالی لحظه‌ای</div>
+                  <div class="auth-feature-sub">گزارش درآمد، بدهی و جریان نقدی را سریع بررسی کنید.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="auth-metrics">
+              <div class="metric">
+                <div class="metric-label">وضعیت امروز</div>
+                <div class="metric-value">نمای کلی جریان نقدی</div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">قراردادها</div>
+                <div class="metric-value">ساخت و چاپ مبایعه نامه های اختصاصی</div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">گزارش‌ها</div>
+                <div class="metric-value">ماهانه و فصلی</div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">پشتیبانی</div>
+                <div class="metric-value">همراه تیم مالی</div>
+              </div>
+            </div>
+            <div class="auth-footer-note">اطلاعات مالی شما با سیاست‌های امنیتی بنگاه محافظت می‌شود.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

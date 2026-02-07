@@ -1,0 +1,784 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}حساب‌های معامله #{{ deal.id }}{% endblock %}
+{% block body_class %}deal-accounts-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/deal_accounts.css' %}">
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <div class="deal-accounts-header">
+        <div class="deal-accounts-header-top">
+          <a class="deal-accounts-back" href="{% url 'dashboard' %}">← داشبورد</a>
+          <div class="deal-accounts-actions">
+            <button type="button"
+                    class="deal-detail-btn deal-detail-btn--ghost"
+                    id="openDealDetailModal">جزئیات معامله</button>
+            {% if deal_accounts_list %}
+              <button type="button"
+                      class="deal-detail-btn deal-detail-btn--primary"
+                      id="openRegisterPaymentModal">ثبت تراکنش</button>
+            {% endif %}
+          </div>
+        </div>
+        <div class="deal-accounts-title-row">
+          <h1 class="deal-accounts-title">حساب‌های معامله #{{ deal.id }}</h1>
+          <span class="deal-accounts-pill">دفتر حساب</span>
+        </div>
+        <p class="deal-accounts-subtitle">دفتر حساب معامله — بدهی/بستانکاری مشتریان، مشاوران و بنگاه.</p>
+      </div>
+      <div class="deal-summary-card deal-summary-card--primary">
+        <div class="deal-summary-item">
+          <span class="deal-summary-label">عنوان معامله</span>
+          <span class="deal-summary-value">{{ deal.title|default:"—" }}</span>
+        </div>
+        <div class="deal-summary-item">
+          <span class="deal-summary-label">نوع معامله</span>
+          <span class="deal-summary-value">{{ deal.type.name|default:"—" }}</span>
+        </div>
+        <div class="deal-summary-item">
+          <span class="deal-summary-label">تاریخ معامله</span>
+          <span class="deal-summary-value">{{ deal.date|default:"—" }}</span>
+        </div>
+        {% if client_receivable_balance %}
+          <div class="deal-summary-item">
+            <span class="deal-summary-label">بستانکاری از مشتریان</span>
+            <span class="deal-summary-value">{{ client_receivable_balance|floatformat:0|intcomma }} تومان</span>
+          </div>
+        {% endif %}
+      </div>
+      {% if summary_items %}
+        <div class="deal-summary-card deal-summary-card--secondary">
+          {% for s in summary_items %}
+            <div class="deal-summary-item">
+              <span class="deal-summary-label">{{ s.label }}</span>
+              <span class="deal-summary-value">{{ s.balance|floatformat:0|intcomma }} ریال</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if transaction and ledger_rows %}
+        <div class="ledger-card" style="margin-bottom: 1rem;">
+          <div class="ledger-card-header">
+            <div>دفتر حساب — سند کمیسیون معامله</div>
+            <div class="ledger-legend">
+              <span class="ledger-legend-item ledger-legend-debit">بدهکار</span>
+              <span class="ledger-legend-item ledger-legend-credit">بستانکار</span>
+              <span class="ledger-legend-item ledger-legend-settled">تسویه‌شده</span>
+            </div>
+          </div>
+          <div class="ledger-table-wrapper">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th class="col-account">حساب</th>
+                  <th class="col-code">کد</th>
+                  <th class="col-desc">نوع حساب</th>
+                  <th class="col-counterpart">طرف مقابل (هم‌ارز)</th>
+                  <th class="col-debit">بدهکار</th>
+                  <th class="col-credit">بستانکار</th>
+                  <th class="col-settled">تسویه‌شده</th>
+                  <th class="col-remaining">باقی‌مانده</th>
+                  <th class="col-actions">تراکنش‌ها</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in ledger_rows %}
+                  <tr>
+                    <td class="col-account">{{ e.account_name }}</td>
+                    <td class="col-code">{{ e.account_code }}</td>
+                    <td class="col-desc">{{ e.account_kind|default:"—" }}</td>
+                    <td class="col-counterpart">{{ e.counterpart_label|default:"—" }}</td>
+                    <td class="col-debit">
+                      {% if e.debit %}{{ e.debit|floatformat:0|intcomma }}{% endif %}
+                    </td>
+                    <td class="col-credit">
+                      {% if e.credit %}{{ e.credit|floatformat:0|intcomma }}{% endif %}
+                    </td>
+                    <td class="col-settled">
+                      {% if e.settled_amount %}
+                        {{ e.settled_amount|floatformat:0|intcomma }}
+                      {% else %}
+                        ۰
+                      {% endif %}
+                    </td>
+                    <td class="col-remaining">
+                      {% if e.remaining_amount %}
+                        {{ e.remaining_amount|floatformat:0|intcomma }}
+                      {% else %}
+                        ۰
+                      {% endif %}
+                    </td>
+                    <td class="col-actions">
+                      {% if e.has_payments %}
+                        <button type="button"
+                                class="payments-badge"
+                                data-account-code="{{ e.account_code }}">مشاهده تراکنش‌ها</button>
+                      {% else %}
+                        <span class="deal-summary-label">—</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+                <tr class="total-row">
+                  <td colspan="4">جمع دفتر</td>
+                  <td class="col-debit">{{ total_debit|floatformat:0|intcomma }}</td>
+                  <td class="col-credit">{{ total_credit|floatformat:0|intcomma }}</td>
+                  <td colspan="3"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-accounts-state">
+          <div class="icon">📋</div>
+          <p>برای این معامله هنوز سند حسابداری (کمیسیون) ثبت نشده است.</p>
+          <p style="margin-top: 8px; font-size: 13px;">
+            پس از تایید نهایی معامله توسط مدیر بنگاه، حساب‌های ذی‌نفعان (مشتریان، مشاوران، مدیر دفتر و …) به‌صورت خودکار ساخته و در این صفحه نمایش داده می‌شوند.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  <script id="payments-data" type="application/json">{{ payments_by_account_json|safe }}</script>
+  <script id="payment-url" type="application/json">{"url": "{% url 'finance:deal-account-payment' deal.id %}"}</script>
+  <script>
+    // مودال جزئیات معامله
+    (function () {
+      const overlay = document.getElementById("dealDetailModal");
+      const openBtn = document.getElementById("openDealDetailModal");
+      const closeBtn = document.getElementById("dealDetailModalClose");
+
+      function setModalOpen(open) {
+        if (!overlay) return;
+        overlay.style.display = open ? "flex" : "none";
+        overlay.setAttribute("aria-hidden", open ? "false" : "true");
+        document.body.style.overflow = open ? "hidden" : "";
+      }
+
+      if (openBtn && overlay) {
+        openBtn.addEventListener("click", function () {
+          setModalOpen(true);
+        });
+      }
+      if (closeBtn && overlay) {
+        closeBtn.addEventListener("click", function () {
+          setModalOpen(false);
+        });
+      }
+      if (overlay) {
+        overlay.addEventListener("click", function (e) {
+          if (e.target && e.target.id === "dealDetailModal") {
+            setModalOpen(false);
+          }
+        });
+      }
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          setModalOpen(false);
+        }
+      });
+    })();
+
+    // مودال تراکنش‌های حساب
+    (function () {
+      const dataEl = document.getElementById("payments-data");
+      let paymentsByAccount = {};
+      if (dataEl && dataEl.textContent.trim()) {
+        try {
+          paymentsByAccount = JSON.parse(dataEl.textContent);
+        } catch (e) {
+          paymentsByAccount = {};
+        }
+      }
+
+      const overlay = document.getElementById("paymentsModal");
+      const closeBtn = document.getElementById("paymentsModalClose");
+      const bodyEl = document.getElementById("paymentsModalBody");
+      const titleEl = document.getElementById("paymentsModalTitle");
+
+      function setPaymentsModalOpen(open) {
+        if (!overlay) return;
+        overlay.style.display = open ? "flex" : "none";
+        overlay.setAttribute("aria-hidden", open ? "false" : "true");
+        document.body.style.overflow = open ? "hidden" : "";
+      }
+
+      function formatAmount(value) {
+        if (value == null) return "۰";
+        try {
+          return Number(value).toLocaleString("fa-IR");
+        } catch (e) {
+          return String(value);
+        }
+      }
+
+      function openPaymentsModal(accountCode, accountName) {
+        const items = paymentsByAccount[accountCode] || [];
+        titleEl.textContent = `تراکنش‌های حساب ${accountName || accountCode}`;
+
+        if (!items.length) {
+          bodyEl.innerHTML = `
+            <div class="empty-accounts-state">
+              <div class="icon">📄</div>
+              <p>هیچ تراکنشی برای این حساب ثبت نشده است.</p>
+            </div>
+          `;
+        } else {
+          bodyEl.innerHTML = `
+            <div class="ledger-table-wrapper">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th>تاریخ</th>
+                    <th>نوع</th>
+                    <th>مبلغ (ریال)</th>
+                    <th>روش</th>
+                    <th>توضیحات</th>
+                    <th>رسید</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${items
+                    .map(
+                      (p) => `
+                        <tr>
+                          <td>${p.date || "—"}</td>
+                          <td>${p.direction || "—"}</td>
+                          <td class="col-credit">${formatAmount(p.amount)}</td>
+                          <td>${p.method || "—"}</td>
+                          <td>${p.description || "—"}</td>
+                          <td>${
+                            p.receipt_url
+                              ? '<button type="button" class="payments-badge receipt-open-btn" data-receipt-url="' + (p.receipt_url || "").replace(/"/g, "&quot;") + '">مشاهده رسید</button>'
+                              : "—"
+                          }</td>
+                        </tr>
+                      `
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        setPaymentsModalOpen(true);
+      }
+
+      var receiptModalBlobUrl = null;
+      function openReceiptModal(url) {
+        const receiptOverlay = document.getElementById("receiptModal");
+        const body = document.getElementById("receiptModalBody");
+        const loading = document.getElementById("receiptModalLoading");
+        const img = document.getElementById("receiptModalImage");
+        const fallback = document.getElementById("receiptModalFallback");
+        const openNewLink = document.getElementById("receiptModalOpenNew");
+        if (!receiptOverlay || !url) return;
+        if (receiptModalBlobUrl) {
+          URL.revokeObjectURL(receiptModalBlobUrl);
+          receiptModalBlobUrl = null;
+        }
+        loading.style.display = "block";
+        if (img) { img.style.display = "none"; img.removeAttribute("src"); }
+        if (fallback) fallback.style.display = "none";
+        receiptOverlay.style.display = "flex";
+        receiptOverlay.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+        fetch(url, { credentials: "include" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("خطا در بارگذاری");
+            var ct = (r.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
+            return r.blob().then(function (blob) {
+              return { blob: blob, contentType: ct };
+            });
+          })
+          .then(function (_) {
+            var blob = _.blob, contentType = _.contentType;
+            if (contentType.indexOf("image/") === 0 && img) {
+              receiptModalBlobUrl = URL.createObjectURL(blob);
+              img.src = receiptModalBlobUrl;
+              img.style.display = "block";
+              loading.style.display = "none";
+            } else {
+              if (openNewLink) {
+                openNewLink.href = url;
+                openNewLink.textContent = "باز کردن رسید در تب جدید";
+              }
+              if (fallback) fallback.style.display = "block";
+              loading.style.display = "none";
+            }
+          })
+          .catch(function () {
+            if (openNewLink) {
+              openNewLink.href = url;
+              openNewLink.textContent = "باز کردن رسید در تب جدید";
+            }
+            if (fallback) fallback.style.display = "block";
+            loading.style.display = "none";
+          });
+      }
+      function closeReceiptModal() {
+        const receiptOverlay = document.getElementById("receiptModal");
+        const img = document.getElementById("receiptModalImage");
+        const fallback = document.getElementById("receiptModalFallback");
+        const loading = document.getElementById("receiptModalLoading");
+        if (receiptOverlay) {
+          receiptOverlay.style.display = "none";
+          receiptOverlay.setAttribute("aria-hidden", "true");
+          document.body.style.overflow = "";
+        }
+        if (receiptModalBlobUrl) {
+          URL.revokeObjectURL(receiptModalBlobUrl);
+          receiptModalBlobUrl = null;
+        }
+        if (img) { img.removeAttribute("src"); img.style.display = "none"; }
+        if (fallback) fallback.style.display = "none";
+        if (loading) loading.style.display = "block";
+      }
+      bodyEl.addEventListener("click", function (e) {
+        const btn = e.target && e.target.closest && e.target.closest(".receipt-open-btn");
+        if (btn && btn.getAttribute("data-receipt-url")) {
+          e.preventDefault();
+          openReceiptModal(btn.getAttribute("data-receipt-url"));
+        }
+      });
+      (function () {
+        const receiptOverlay = document.getElementById("receiptModal");
+        const receiptClose = document.getElementById("receiptModalClose");
+        if (receiptClose) receiptClose.addEventListener("click", closeReceiptModal);
+        if (receiptOverlay) {
+          receiptOverlay.addEventListener("click", function (ev) {
+            if (ev.target && ev.target.id === "receiptModal") closeReceiptModal();
+          });
+        }
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && receiptOverlay && receiptOverlay.getAttribute("aria-hidden") === "false") {
+            closeReceiptModal();
+          }
+        });
+      })();
+
+      document.querySelectorAll(".payments-badge").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const code = this.getAttribute("data-account-code");
+          const row = this.closest("tr");
+          const nameCell = row ? row.querySelector(".col-account") : null;
+          const name = nameCell ? nameCell.textContent.trim() : "";
+          openPaymentsModal(code, name);
+        });
+      });
+
+      if (closeBtn && overlay) {
+        closeBtn.addEventListener("click", function () {
+          setPaymentsModalOpen(false);
+        });
+      }
+      if (overlay) {
+        overlay.addEventListener("click", function (e) {
+          if (e.target && e.target.id === "paymentsModal") {
+            setPaymentsModalOpen(false);
+          }
+        });
+      }
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          setPaymentsModalOpen(false);
+        }
+      });
+    })();
+
+    (function () {
+      const overlay = document.getElementById("registerPaymentModal");
+      const openBtn = document.getElementById("openRegisterPaymentModal");
+      const closeBtn = document.getElementById("registerPaymentModalClose");
+      const form = document.getElementById("registerPaymentForm");
+      const messageEl = document.getElementById("registerPaymentMessage");
+      const submitBtn = document.getElementById("registerPaymentSubmit");
+      if (!overlay || !form) return;
+
+      let paymentUrl = "";
+      try {
+        const urlEl = document.getElementById("payment-url");
+        if (urlEl && urlEl.textContent) {
+          paymentUrl = JSON.parse(urlEl.textContent).url;
+        }
+      } catch (e) {}
+
+      function setRegisterPaymentModalOpen(open) {
+        overlay.style.display = open ? "flex" : "none";
+        overlay.setAttribute("aria-hidden", open ? "false" : "true");
+        document.body.style.overflow = open ? "hidden" : "";
+        if (!open) {
+          messageEl.textContent = "";
+          messageEl.className = "form-message";
+        }
+      }
+
+      if (openBtn) {
+        openBtn.addEventListener("click", function () {
+          setRegisterPaymentModalOpen(true);
+        });
+      }
+      if (closeBtn) {
+        closeBtn.addEventListener("click", function () {
+          setRegisterPaymentModalOpen(false);
+        });
+      }
+      overlay.addEventListener("click", function (e) {
+        if (e.target && e.target.id === "registerPaymentModal") {
+          setRegisterPaymentModalOpen(false);
+        }
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && overlay.getAttribute("aria-hidden") === "false") {
+          setRegisterPaymentModalOpen(false);
+        }
+      });
+
+      var amountInput = document.getElementById("paymentAmount");
+      if (amountInput) {
+        function toEnDigits(str) {
+          var fa = "۰۱۲۳۴۵۶۷۸۹";
+          var out = "";
+          for (var i = 0; i < (str || "").length; i++) {
+            var idx = fa.indexOf(str[i]);
+            out += idx >= 0 ? idx : str[i];
+          }
+          return out;
+        }
+        function getRawAmount() {
+          var v = (amountInput.value || "").replace(/,|٬|،/g, "");
+          var en = toEnDigits(v);
+          return en.replace(/\D/g, "");
+        }
+        function formatAmountInput() {
+          var raw = getRawAmount();
+          if (!raw) {
+            amountInput.value = "";
+            amountInput.setAttribute("data-raw", "");
+            return;
+          }
+          var n = parseInt(raw, 10);
+          if (isNaN(n)) {
+            amountInput.setAttribute("data-raw", "");
+            return;
+          }
+          amountInput.setAttribute("data-raw", String(n));
+          amountInput.value = n.toLocaleString("fa-IR");
+        }
+        function allowOnlyDigits(e) {
+          var k = e.key;
+          if (k === "Backspace" || k === "Tab" || k === "Enter") return;
+          if (e.ctrlKey || e.metaKey) return;
+          if (/[0-9۰-۹]/.test(k)) return;
+          e.preventDefault();
+        }
+        amountInput.addEventListener("blur", formatAmountInput);
+        amountInput.addEventListener("keydown", allowOnlyDigits);
+        amountInput.addEventListener("input", function () {
+          var raw = getRawAmount();
+          amountInput.setAttribute("data-raw", raw ? String(parseInt(raw, 10)) : "");
+        });
+      }
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (!paymentUrl) {
+          messageEl.textContent = "آدرس ثبت تراکنش یافت نشد.";
+          messageEl.className = "form-message error";
+          return;
+        }
+        var fd = new FormData(form);
+        var rawAmount = amountInput ? (amountInput.getAttribute("data-raw") || amountInput.value) : fd.get("amount");
+        if (typeof rawAmount === "string") {
+          rawAmount = rawAmount.replace(/,|٬|،/g, "").replace(/[۰-۹]/g, function (c) {
+            return "۰۱۲۳۴۵۶۷۸۹".indexOf(c);
+          }).replace(/\D/g, "");
+        }
+        if (!rawAmount || parseInt(rawAmount, 10) <= 0) {
+          messageEl.textContent = "مبلغ را به درستی وارد کنید.";
+          messageEl.className = "form-message error";
+          return;
+        }
+        fd.set("amount", rawAmount);
+        var csrf = fd.get("csrfmiddlewaretoken") || "";
+        messageEl.textContent = "در حال ثبت...";
+        messageEl.className = "form-message";
+        submitBtn.disabled = true;
+        fetch(paymentUrl, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrf,
+            "Accept": "application/json",
+          },
+          body: fd,
+        })
+          .then(function (res) {
+            return res.json().then(function (data) {
+              if (res.ok && data.success) {
+                messageEl.textContent = data.message || "ثبت شد.";
+                messageEl.className = "form-message success";
+                setTimeout(function () {
+                  window.location.reload();
+                }, 800);
+              } else {
+                messageEl.textContent = data.message || "خطا در ثبت تراکنش.";
+                messageEl.className = "form-message error";
+                submitBtn.disabled = false;
+              }
+            });
+          })
+          .catch(function () {
+            messageEl.textContent = "خطا در ارتباط با سرور.";
+            messageEl.className = "form-message error";
+            submitBtn.disabled = false;
+          });
+      });
+    })();
+  </script>
+{% endblock %}
+{% block modals %}
+  <div class="deal-detail-modal-overlay"
+       id="dealDetailModal"
+       aria-hidden="true">
+    <div class="deal-detail-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="dealDetailModalTitle">
+      <div class="deal-detail-modal-header">
+        <h2 class="deal-detail-modal-title" id="dealDetailModalTitle">جزئیات معامله #{{ deal.id }}</h2>
+        <button type="button"
+                class="deal-detail-modal-close"
+                id="dealDetailModalClose">بستن</button>
+      </div>
+      <div class="deal-detail-modal-body">
+        <div class="detail-grid">
+          <div class="detail-card">
+            <h3>اطلاعات پایه</h3>
+            <div class="kv">
+              <b>کد معامله</b><span>{{ deal.id }}</span>
+              <b>وضعیت</b><span>{{ deal.get_status_display|default:deal.status }}</span>
+              <b>نوع</b><span>{{ deal.type.name|default:"—" }}</span>
+              <b>سازنده</b><span>{{ deal.created_by.get_full_name|default:deal.created_by.username }}</span>
+            </div>
+          </div>
+          <div class="detail-card">
+            <h3>تاریخ‌ها</h3>
+            <div class="kv">
+              <b>تاریخ مبایعه</b><span>{{ deal.agreement_date|default:"ثبت نشده" }}</span>
+              <b>تاریخ دفترخانه</b><span>{{ deal.office_date|default:"ثبت نشده" }}</span>
+              <b>تاریخ ثبت</b><span>{{ deal.created_at|date:"Y/m/d H:i" }}</span>
+            </div>
+          </div>
+          <div class="detail-card">
+            <h3>مبالغ</h3>
+            <div class="kv">
+              <b>مبلغ معامله</b><span>
+                {% if deal.amount %}
+                  {{ deal.amount|floatformat:0|intcomma }} ریال
+                {% else %}
+                  —
+                {% endif %}
+              </span>
+              <b>قیمت پایه</b><span>
+                {% if deal.base_price %}
+                  {{ deal.base_price|floatformat:0|intcomma }} ریال
+                {% else %}
+                  ثبت نشده
+                {% endif %}
+              </span>
+              <b>اضافه پرداخت</b><span>
+                {% if deal.overpayment %}
+                  {{ deal.overpayment|floatformat:0|intcomma }} ریال
+                {% else %}
+                  ثبت نشده
+                {% endif %}
+              </span>
+              <b>دریافتی اضافه پرداخت</b><span>
+                {% if deal.overpayment_received %}
+                  {{ deal.overpayment_received|floatformat:0|intcomma }} ریال
+                {% else %}
+                  ثبت نشده
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          <div class="detail-card">
+            <h3>طرفین</h3>
+            <div class="kv">
+              <b>خریداران</b><span>
+                {% if deal.buyers.all %}
+                  {{ deal.buyers.all|join:"، " }}
+                {% else %}
+                  ثبت نشده
+                {% endif %}
+              </span>
+              <b>فروشندگان</b><span>
+                {% if deal.sellers.all %}
+                  {{ deal.sellers.all|join:"، " }}
+                {% else %}
+                  ثبت نشده
+                {% endif %}
+              </span>
+              <b>مشاوران</b><span>
+                {% if deal.consultants.all %}
+                  {{ deal.consultants.all|join:"، " }}
+                {% else %}
+                  ثبت نشده
+                {% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+        {% if deal.description %}
+          <div class="detail-card" style="margin-top:10px;">
+            <h3>توضیحات</h3>
+            <div class="kv">
+              <b>شرح</b><span>{{ deal.description }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="deal-detail-modal-overlay"
+       id="paymentsModal"
+       aria-hidden="true">
+    <div class="deal-detail-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="paymentsModalTitle">
+      <div class="deal-detail-modal-header">
+        <h2 class="deal-detail-modal-title" id="paymentsModalTitle">تراکنش‌های حساب</h2>
+        <button type="button" class="deal-detail-modal-close" id="paymentsModalClose">بستن</button>
+      </div>
+      <div class="deal-detail-modal-body" id="paymentsModalBody">
+        <div class="empty-accounts-state">
+          <div class="icon">📄</div>
+          <p>هیچ تراکنشی برای این حساب ثبت نشده است.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="deal-detail-modal-overlay"
+       id="receiptModal"
+       aria-hidden="true">
+    <div class="deal-detail-modal receipt-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="receiptModalTitle">
+      <div class="deal-detail-modal-header">
+        <h2 class="deal-detail-modal-title" id="receiptModalTitle">رسید</h2>
+        <button type="button" class="deal-detail-modal-close" id="receiptModalClose">بستن</button>
+      </div>
+      <div class="deal-detail-modal-body receipt-modal-body"
+           id="receiptModalBody">
+        <div class="receipt-loading" id="receiptModalLoading">در حال بارگذاری…</div>
+        <img id="receiptModalImage"
+             class="receipt-image"
+             alt="رسید"
+             style="display:none" />
+        <div class="receipt-fallback"
+             id="receiptModalFallback"
+             style="display:none">
+          <p>این فایل در قاب امن مرورگر نمایش داده نمی‌شود.</p>
+          <p>
+            <a id="receiptModalOpenNew" href="#" target="_blank" rel="noopener">باز کردن رسید در تب جدید</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% if deal_accounts_list %}
+    <div class="deal-detail-modal-overlay"
+         id="registerPaymentModal"
+         aria-hidden="true">
+      <div class="deal-detail-modal"
+           role="dialog"
+           aria-modal="true"
+           aria-labelledby="registerPaymentModalTitle">
+        <div class="deal-detail-modal-header">
+          <h2 class="deal-detail-modal-title" id="registerPaymentModalTitle">ثبت تراکنش</h2>
+          <button type="button"
+                  class="deal-detail-modal-close"
+                  id="registerPaymentModalClose">بستن</button>
+        </div>
+        <div class="deal-detail-modal-body">
+          <form id="registerPaymentForm"
+                class="payment-form"
+                enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-row">
+              <label for="paymentAccount">
+                حساب <span class="required">*</span>
+              </label>
+              <select id="paymentAccount" name="account_id" required>
+                <option value="">— انتخاب حساب —</option>
+                {% for acc in deal_accounts_list %}<option value="{{ acc.id }}">{{ acc.code }} — {{ acc.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="paymentAmount">
+                مبلغ (ریال) <span class="required">*</span>
+              </label>
+              <input type="text"
+                     id="paymentAmount"
+                     name="amount"
+                     inputmode="numeric"
+                     required
+                     placeholder="مثال: ۱٬۰۰۰٬۰۰۰"
+                     data-raw="">
+              <span class="form-hint">سه‌رقم سه‌رقم وارد کنید یا پس از وارد کردن مبلغ از فیلد خارج شوید.</span>
+            </div>
+            <div class="form-row">
+              <label for="paymentDirection">
+                نوع تراکنش <span class="required">*</span>
+              </label>
+              <select id="paymentDirection" name="direction" required>
+                <option value="receive">دریافت از طرف حساب</option>
+                <option value="pay">پرداخت به طرف حساب</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="paymentDate">تاریخ (اختیاری)</label>
+              <input type="text"
+                     id="paymentDate"
+                     name="date"
+                     placeholder="۱۴۰۳/۰۵/۱۵ یا 2024-08-06">
+            </div>
+            <div class="form-row">
+              <label for="paymentMethod">روش پرداخت/دریافت</label>
+              <input type="text"
+                     id="paymentMethod"
+                     name="method"
+                     placeholder="نقد، کارت، حواله و ...">
+            </div>
+            <div class="form-row">
+              <label for="paymentDescription">توضیحات</label>
+              <textarea id="paymentDescription"
+                        name="description"
+                        rows="2"
+                        placeholder="شرح تراکنش (اختیاری)"></textarea>
+            </div>
+            <div class="form-row">
+              <label for="paymentReceipt">ضمیمه / تصویر رسید (اختیاری)</label>
+              <input type="file"
+                     id="paymentReceipt"
+                     name="receipt"
+                     accept="image/*,.pdf,.doc,.docx"
+                     class="payment-file-input">
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="deal-detail-btn" id="registerPaymentSubmit">ثبت تراکنش</button>
+              <span class="form-message" id="registerPaymentMessage"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,1639 @@
+{% extends "base.html" %}
+{% block title %}ثبت معامله جدید{% endblock %}
+{% block body_class %}deal-create-page{% endblock %}
+{% block extra_head %}
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <style>
+    .deal-create-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(240px, 0.42fr);
+        gap: 18px;
+        width: 100%;
+    }
+
+    .wizard-card {
+        background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+        border-radius: 24px;
+        border: 1px solid rgba(148,163,184,0.32);
+        padding: 22px 20px;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .wizard-steps {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+
+    .wizard-step {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        border: 1px solid rgba(148,163,184,0.45);
+        color: var(--color-text-muted);
+        background: color-mix(in srgb, var(--color-bg-soft) 25%, transparent);
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .wizard-step:hover {
+        border-color: rgba(96,165,250,0.6);
+        background: color-mix(in srgb, var(--color-bg-soft) 50%, transparent);
+    }
+
+    .wizard-step.active {
+        color: #e5f2ff;
+        border-color: rgba(96,165,250,0.8);
+        background: linear-gradient(135deg, var(--color-accent), var(--color-accent-soft));
+        box-shadow: 0 10px 25px rgba(37,99,235,0.6);
+    }
+
+    .wizard-panel {
+        display: none;
+    }
+
+    .wizard-panel.active {
+        display: block;
+    }
+
+    .form-grid.one-col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .helper-row {
+        font-size: 11px;
+        color: var(--color-text-muted);
+        margin-top: -6px;
+    }
+
+    .inline-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+
+    .btn-secondary {
+        background: color-mix(in srgb, var(--color-surface) 75%, transparent);
+        border: 1px solid rgba(148,163,184,0.55);
+        color: var(--color-text);
+        padding: 11px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .btn-secondary:hover {
+        border-color: rgba(96,165,250,0.85);
+    }
+
+    .btn-primary:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        box-shadow: none;
+        filter: grayscale(0.2);
+    }
+
+    .notice-box {
+        border-radius: 14px;
+        padding: 10px 12px;
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    .notice-error {
+        border: 1px solid rgba(248,113,113,0.75);
+        background: rgba(127,29,29,0.4);
+        color: #fecaca;
+        display: none;
+    }
+
+    .notice-success {
+        border: 1px solid rgba(74,222,128,0.8);
+        background: rgba(20,83,45,0.5);
+        color: #dcfce7;
+        display: none;
+    }
+
+    .side-summary {
+        background: color-mix(in srgb, var(--color-surface-alt) 70%, transparent);
+        border-radius: 20px;
+        padding: 16px 14px;
+        border: 1px solid rgba(148,163,184,0.35);
+        position: sticky;
+        top: 18px;
+        height: fit-content;
+    }
+
+    .summary-title {
+        font-size: 13px;
+        margin: 0 0 10px;
+        color: var(--color-text);
+        font-family: var(--font-title);
+    }
+
+    .summary-item {
+        font-size: 11px;
+        color: color-mix(in srgb, var(--color-text) 82%, transparent);
+        margin-bottom: 6px;
+        line-height: 1.7;
+    }
+
+    .summary-item span {
+        color: var(--color-text-muted);
+    }
+
+    .list-box {
+        border-radius: 14px;
+        padding: 10px 12px;
+        border: 1px solid rgba(148,163,184,0.35);
+        background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+        max-height: 220px;
+        overflow: auto;
+    }
+
+    .list-box label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--color-text);
+        padding: 6px 4px;
+        border-radius: 10px;
+    }
+
+    .list-box label:hover {
+        background: rgba(30,64,175,0.35);
+    }
+
+    .list-box input[type="checkbox"] {
+        accent-color: #2563eb;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 9px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(148,163,184,0.45);
+        background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+        color: var(--color-text);
+        font-size: 12px;
+    }
+
+    .numeric-input {
+        direction: ltr;
+        text-align: left;
+        letter-spacing: 0.5px;
+    }
+
+    .hint-row {
+        font-size: 10px;
+        color: var(--color-text-muted);
+        margin-top: 6px;
+    }
+
+    .pill-success {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(34,197,94,0.6);
+        color: #bbf7d0;
+        font-size: 10px;
+        background: rgba(22,163,74,0.25);
+    }
+
+    .financial-section {
+        margin-bottom: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid rgba(148,163,184,0.25);
+    }
+    .financial-section:last-of-type {
+        border-bottom: none;
+    }
+    .section-heading {
+        font-size: 14px;
+        margin: 0 0 12px;
+        color: var(--color-accent);
+        font-family: var(--font-title);
+    }
+    .client-commissions-table-wrap {
+        overflow-x: auto;
+        border-radius: 14px;
+        border: 1px solid rgba(148,163,184,0.35);
+        background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+        margin-bottom: 12px;
+    }
+    .comm-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .comm-table th, .comm-table td {
+        padding: 10px 12px;
+        text-align: right;
+        border-bottom: 1px solid rgba(148,163,184,0.2);
+    }
+    .comm-table th {
+        color: var(--color-text-muted);
+        font-weight: 600;
+    }
+    .comm-table tr:last-child td {
+        border-bottom: none;
+    }
+    .comm-table input {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(148,163,184,0.4);
+        background: var(--color-bg-soft);
+        color: var(--color-text);
+        font-size: 12px;
+    }
+    .comm-table input[type="number"] {
+        direction: ltr;
+        text-align: left;
+    }
+    .review-panel {
+        padding: 8px 0;
+    }
+    .review-panel .section-heading {
+        margin-bottom: 16px;
+        font-size: 18px;
+    }
+    .review-panel .helper-row {
+        margin-bottom: 20px;
+        font-size: 13px;
+    }
+    .review-block {
+        margin-bottom: 20px;
+        padding: 18px 20px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+        border: 1px solid rgba(148,163,184,0.35);
+    }
+    .review-block h4 {
+        font-size: 14px;
+        font-weight: 700;
+        margin: 0 0 14px;
+        color: var(--color-accent);
+        font-family: var(--font-title);
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(148,163,184,0.25);
+    }
+    .review-block ul, .review-block p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+    .review-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px 12px;
+        margin-bottom: 10px;
+    }
+    .review-row:last-child {
+        margin-bottom: 0;
+    }
+    .review-row .label {
+        color: var(--color-text-muted);
+        font-size: 13px;
+        min-width: 140px;
+    }
+    .review-row .value {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-text);
+    }
+    .review-row .value.money {
+        font-family: var(--font-sans);
+        letter-spacing: 0.02em;
+    }
+    .review-financial {
+        margin-bottom: 20px;
+        padding: 20px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+        border: 1px solid rgba(37,99,235,0.25);
+    }
+    .review-financial h4 {
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0 0 16px;
+        color: var(--color-accent);
+        font-family: var(--font-title);
+    }
+    .review-financial-section {
+        margin-bottom: 20px;
+    }
+    .review-financial-section:last-child {
+        margin-bottom: 0;
+    }
+    .review-financial-section .subtitle {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        margin: 0 0 10px;
+        font-weight: 600;
+    }
+    .review-financial-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .review-financial-table th,
+    .review-financial-table td {
+        padding: 10px 12px;
+        text-align: right;
+        border-bottom: 1px solid rgba(148,163,184,0.2);
+    }
+    .review-financial-table th {
+        color: var(--color-text-muted);
+        font-weight: 600;
+        font-size: 12px;
+    }
+    .review-financial-table tr:last-child td {
+        border-bottom: none;
+    }
+    .review-financial-table .amount-cell {
+        font-weight: 700;
+        color: var(--color-text);
+    }
+    .review-summary-row {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 2px solid rgba(148,163,184,0.3);
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .review-edit-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+    }
+    .review-edit-buttons .btn-edit-step {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,0.5);
+        background: color-mix(in srgb, var(--color-surface) 75%, transparent);
+        color: var(--color-text);
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .review-edit-buttons .btn-edit-step:hover {
+        border-color: var(--color-accent);
+        background: rgba(37,99,235,0.2);
+    }
+    .consultant-pct-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .consultant-pct-row label {
+        min-width: 120px;
+        font-size: 12px;
+    }
+    .consultant-pct-row input {
+        width: 90px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(148,163,184,0.4);
+        background: var(--color-bg-soft);
+        color: var(--color-text);
+    }
+
+    .add-client-btn {
+        width: auto;
+        padding: 9px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,0.55);
+        background: linear-gradient(135deg, var(--color-accent), var(--color-accent-soft));
+        color: #e5f2ff;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+        box-shadow: 0 10px 25px rgba(37,99,235,0.35);
+    }
+
+    .add-client-btn:hover {
+        filter: brightness(1.05);
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 9999;
+    }
+
+    html[data-theme="light"] .modal-overlay {
+        background: rgba(15, 23, 42, 0.42);
+    }
+
+    .modal {
+        width: 100%;
+        max-width: 520px;
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, 0.40);
+        background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+        box-shadow: var(--shadow-xl);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+        background: radial-gradient(circle at 0 0, rgba(37,99,235,0.16), transparent 45%);
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 18px;
+        font-family: var(--font-title);
+        color: var(--color-text);
+    }
+
+    .modal-body {
+        padding: 14px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .modal-actions .btn-primary {
+        width: auto;
+        min-width: 160px;
+    }
+
+    .modal-actions .btn-ghost {
+        width: auto;
+    }
+
+    @media (max-width: 980px) {
+        .deal-create-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <section class="page-card">
+    <div class="page-card-inner">
+      <p style="margin:0 0 10px;">
+        <a class="btn-ghost"
+           href="{% url 'dashboard' %}"
+           style="width:auto;
+                  padding:6px 12px;
+                  font-size:12px">← برگشت به داشبورد</a>
+      </p>
+      <h1 class="page-title">
+        ثبت معامله جدید
+        <span>ثبت اطلاعات معامله</span>
+      </h1>
+      <p class="page-subtitle">
+        ثبت معامله در پنج گام: اطلاعات معامله، تعریف مشتریان، تعریف مشاوران، مرحله مالی (کمیسیون مشتریان و مشاوران)، و در پایان بررسی و ثبت نهایی.
+      </p>
+      <div class="deal-create-grid">
+        <div class="wizard-card">
+          <div class="wizard-steps">
+            <span class="wizard-step active" data-step="1">۱ · اطلاعات معامله</span>
+            <span class="wizard-step" data-step="2">۲ · مشتریان</span>
+            <span class="wizard-step" data-step="3">۳ · مشاوران</span>
+            <span class="wizard-step" data-step="4">۴ · مالی</span>
+            <span class="wizard-step" data-step="5">۵ · بررسی و ثبت</span>
+          </div>
+          <div class="notice-box notice-error" id="error-box"></div>
+          <div class="notice-box notice-success" id="success-box"></div>
+          <div class="wizard-panel active" data-panel="1">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">عنوان معامله</label>
+                <div class="field">
+                  <input type="text"
+                         id="deal-title"
+                         placeholder="مثلاً فروش آپارتمان سعادت‌آباد">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">نوع معامله</label>
+                <div class="field">
+                  <select id="deal-type">
+                    <option value="">انتخاب کنید</option>
+                    {% for type in transaction_types %}<option value="{{ type.id }}">{{ type.name }}</option>{% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">مبلغ کل معامله</label>
+                <div class="field">
+                  <input type="text"
+                         id="deal-amount"
+                         class="numeric-input"
+                         inputmode="numeric"
+                         autocomplete="off"
+                         data-format="money"
+                         placeholder="مثلاً 1,250,000,000">
+                </div>
+                <div class="helper-row">مبلغ به ریال.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">تاریخ مبایعه</label>
+                <div class="field">
+                  <input type="text"
+                         id="deal-agreement-date"
+                         class="numeric-input"
+                         inputmode="numeric"
+                         autocomplete="off"
+                         data-format="date"
+                         placeholder="۱۴۰۲/۰۳/۱۶">
+                </div>
+                <div class="hint-row">فرمت استاندارد: ۱۴۰۲/۰۳/۱۶</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">
+                  تاریخ دفترخانه <span>(اختیاری)</span>
+                </label>
+                <div class="field">
+                  <input type="text"
+                         id="deal-office-date"
+                         class="numeric-input"
+                         inputmode="numeric"
+                         autocomplete="off"
+                         data-format="date"
+                         placeholder="۱۴۰۲/۰۴/۰۱">
+                </div>
+              </div>
+            </div>
+            <div class="inline-actions">
+              <button class="btn-primary" type="button" id="step-1-next">ثبت مرحله اول و ادامه</button>
+            </div>
+          </div>
+          <div class="wizard-panel" data-panel="2">
+            <div class="form-grid one-col">
+              <div class="form-group">
+                <label class="form-label">جستجو در لیست</label>
+                <input type="text"
+                       class="search-input"
+                       id="client-search"
+                       placeholder="نام یا شماره تلفن">
+              </div>
+              <div class="form-group">
+                <label class="form-label" id="buyers-label">خریداران</label>
+                <div class="list-box" id="buyers-list"></div>
+                <div class="helper-row" id="buyers-helper">حداقل یک خریدار انتخاب شود (در صورت وجود).</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" id="sellers-label">فروشندگان</label>
+                <div class="list-box" id="sellers-list"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">افزودن شخص جدید</label>
+                <div class="inline-actions">
+                  <button class="add-client-btn" type="button" id="open-client-modal">+ افزودن شخص جدید</button>
+                </div>
+                <div class="helper-row">پس از ذخیره، شخص جدید در لیست مشتریان نمایش داده می‌شود.</div>
+              </div>
+            </div>
+            <div class="inline-actions">
+              <button class="btn-secondary" type="button" data-back>بازگشت</button>
+              <button class="btn-primary" type="button" id="step-2-next">ثبت مشتریان و ادامه</button>
+            </div>
+          </div>
+          <div class="wizard-panel" data-panel="3">
+            <div class="form-grid one-col">
+              <div class="form-group">
+                <label class="form-label">انتخاب مشاوران معامله</label>
+                <div class="list-box" id="consultants-list"></div>
+                <div class="helper-row">مشاوران مرتبط با این معامله را انتخاب کنید. سهم کمیسیون در مرحله بعد وارد می‌شود.</div>
+              </div>
+            </div>
+            <div class="inline-actions">
+              <button class="btn-secondary" type="button" data-back>بازگشت</button>
+              <button class="btn-primary" type="button" id="step-3-next">ثبت مشاوران و ادامه</button>
+            </div>
+          </div>
+          <div class="wizard-panel" data-panel="4">
+            <div class="financial-section">
+              <h3 class="section-heading">مبالغ بنگاه</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">بالابود (خیر)</label>
+                  <div class="field">
+                    <input type="text"
+                           id="deal-overpayment"
+                           class="numeric-input"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           data-format="money"
+                           placeholder="مثلاً 35,000,000">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">بالابود دریافتی به دفتر</label>
+                  <div class="field">
+                    <input type="text"
+                           id="deal-overpayment-received"
+                           class="numeric-input"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           data-format="money"
+                           placeholder="مثلاً 18,000,000">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="financial-section">
+              <h3 class="section-heading">کمیسیون قابل‌پرداخت مشتریان</h3>
+              <p class="helper-row">مبلغ کمیسیون/حق‌العملی که هر مشتری قرار است بپردازد (اختیاری).</p>
+              <div class="client-commissions-table-wrap">
+                <table class="comm-table">
+                  <thead>
+                    <tr>
+                      <th>مشتری</th>
+                      <th>نقش</th>
+                      <th>مبلغ (ریال)</th>
+                      <th>توضیحات</th>
+                    </tr>
+                  </thead>
+                  <tbody id="client-commissions-tbody">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="financial-section">
+              <h3 class="section-heading">سهم کمیسیون دفتر، مدیر و مشاوران</h3>
+              <p class="helper-row">مبلغ سهم هر بخش از خیر دریافتی (اختیاری).</p>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">مبلغ سهم دفتر (ریال)</label>
+                  <div class="field">
+                    <input type="text"
+                           id="office-amount"
+                           class="numeric-input"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           data-format="money"
+                           placeholder="0">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">مبلغ سهم مدیر (ریال)</label>
+                  <div class="field">
+                    <input type="text"
+                           id="manager-amount"
+                           class="numeric-input"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           data-format="money"
+                           placeholder="0">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" id="consultant-percentages-wrap">
+                <label class="form-label">مبلغ سهم هر مشاور (ریال)</label>
+                <div id="consultant-amounts-list"></div>
+              </div>
+            </div>
+            <div class="inline-actions">
+              <button class="btn-secondary" type="button" data-back>بازگشت</button>
+              <button class="btn-primary" type="button" id="step-4-next">ثبت مالی و ادامه به بررسی</button>
+            </div>
+          </div>
+          <div class="wizard-panel" data-panel="5">
+            <div class="review-panel">
+              <h3 class="section-heading">بررسی اطلاعات وارد شده</h3>
+              <p class="helper-row">
+                در صورت نیاز می‌توانید با کلیک روی دکمه‌های زیر به هر مرحله برگردید و ویرایش کنید. پس از اطمینان، «ثبت نهایی» را بزنید تا وضعیت معامله به «در انتظار تایید مدیر» تغییر کند.
+              </p>
+              <div id="review-content"></div>
+              <div class="review-edit-buttons" id="review-edit-buttons"></div>
+              <div class="inline-actions" style="margin-top:16px;">
+                <button class="btn-secondary" type="button" data-back>بازگشت</button>
+                <button class="btn-primary" type="button" id="step-5-submit">ثبت نهایی (وضعیت: در انتظار تایید)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="side-summary">
+          <h2 class="summary-title">خلاصه معامله</h2>
+          <div class="summary-item">
+            <span>کد معامله:</span> <strong id="summary-id">ثبت نشده</strong>
+          </div>
+          <div class="summary-item">
+            <span>عنوان:</span> <strong id="summary-title">-</strong>
+          </div>
+          <div class="summary-item">
+            <span>نوع:</span> <strong id="summary-type">-</strong>
+          </div>
+          <div class="summary-item">
+            <span>مبلغ:</span> <strong id="summary-amount">-</strong>
+          </div>
+          <div class="summary-item">
+            <span id="summary-buyers-label">خریداران:</span> <strong id="summary-buyers">-</strong>
+          </div>
+          <div class="summary-item">
+            <span id="summary-sellers-label">فروشندگان:</span> <strong id="summary-sellers">-</strong>
+          </div>
+          <div class="summary-item">
+            <span>مشاوران:</span> <strong id="summary-consultants">-</strong>
+          </div>
+          <div class="summary-item">
+            <span>وضعیت:</span>
+            <strong class="pill-success" id="summary-status">در حال ثبت</strong>
+          </div>
+          <div class="summary-item" id="summary-actions" style="margin-top:10px;"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+  <div class="modal-overlay" id="client-modal-overlay" aria-hidden="true">
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="client-modal-title"
+         onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title" id="client-modal-title">افزودن شخص جدید</h3>
+        <button type="button"
+                class="btn-ghost"
+                id="close-client-modal"
+                style="width:auto">بستن</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid one-col">
+          <div class="form-group">
+            <label class="form-label">نام مشتری</label>
+            <div class="field">
+              <input type="text" id="client-name" placeholder="مثلاً علی محمدی">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">نام پدر</label>
+            <div class="field">
+              <input type="text" id="client-father-name" placeholder="مثلاً محمد">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">کد ملی</label>
+            <div class="field">
+              <input type="text"
+                     id="client-national-id"
+                     placeholder="۱۰ رقم"
+                     maxlength="10"
+                     pattern="[0-9]*"
+                     inputmode="numeric">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">تاریخ تولد (شمسی)</label>
+            <div class="field">
+              <input type="text" id="client-birth-date" placeholder="مثلاً 1370/05/15">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">صادره از شهر</label>
+            <div class="field">
+              <input type="text" id="client-city-issuance" placeholder="مثلاً تهران">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">شماره تماس</label>
+            <div class="field">
+              <input type="text" id="client-phone" placeholder="09xxxxxxxxx">
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" id="save-client-modal">ذخیره</button>
+          <button type="button" class="btn-ghost" id="cancel-client-modal">انصراف</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const api = {
+        createDeal: "{% url 'create_deal' %}",
+        updateDealTemplate: "{% url 'update_deal' 0 %}",
+        dealDetailTemplate: "{% url 'deal-detail' 0 %}".replace("/0/", "/"),
+        clientList: "{% url 'client-list' %}",
+        consultantList: "{% url 'consultant-list' %}",
+        clientCommissionsBulkTemplate: "{% url 'deal-client-commissions-bulk' 0 %}".replace("/0/", "/"),
+        commissionSplitsBulkTemplate: "{% url 'deal-commission-splits-bulk' 0 %}".replace("/0/", "/"),
+        createSplit: "{% url 'create_commission_split' %}",
+        dashboard: "{% url 'dashboard' %}"
+    };
+
+    const state = {
+        dealId: null,
+        clients: [],
+        consultants: [],
+        buyers: [],
+        sellers: [],
+        selectedConsultants: [],
+        selectedBuyerIds: [],
+        selectedSellerIds: [],
+        selectedConsultantIds: [],
+        dealTypeName: ""
+    };
+
+    const errorBox = document.getElementById("error-box");
+    const successBox = document.getElementById("success-box");
+
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+        successBox.style.display = "none";
+    }
+
+    function showSuccess(message) {
+        successBox.textContent = message;
+        successBox.style.display = "block";
+        errorBox.style.display = "none";
+    }
+
+    function clearNotices() {
+        errorBox.style.display = "none";
+        successBox.style.display = "none";
+    }
+
+    function getCsrfToken() {
+        const token = document.querySelector('meta[name="csrf-token"]');
+        return token ? token.getAttribute("content") : "";
+    }
+
+    function normalizeDigits(value) {
+        return value
+            .replace(/[۰-۹]/g, digit => "0123456789"["۰۱۲۳۴۵۶۷۸۹".indexOf(digit)])
+            .replace(/[٠-٩]/g, digit => "0123456789"["٠١٢٣٤٥٦٧٨٩".indexOf(digit)]);
+    }
+
+    function formatNumberInput(value) {
+        const digits = normalizeDigits(value).replace(/[^\d]/g, "");
+        if (!digits) return "";
+        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    function parseNumber(value) {
+        const digits = normalizeDigits(value).replace(/[^\d]/g, "");
+        if (!digits) return 0;
+        return Number(digits);
+    }
+
+    function formatDateInput(value) {
+        const digits = normalizeDigits(value).replace(/[^\d]/g, "").slice(0, 8);
+        if (digits.length <= 4) return digits;
+        if (digits.length <= 6) return `${digits.slice(0, 4)}/${digits.slice(4)}`;
+        return `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6)}`;
+    }
+
+    function isValidDateValue(value) {
+        if (!value) return true;
+        const normalized = formatDateInput(value);
+        return normalized.length === 10;
+    }
+
+    function isLeaseType(typeName) {
+        if (!typeName) return false;
+        const compact = typeName.replace(/\s+/g, "");
+        return compact.includes("اجاره") || compact.includes("رهن");
+    }
+
+    function getRoleLabels(typeName) {
+        if (isLeaseType(typeName)) {
+            return {
+                buyer: "مستاجر",
+                seller: "موجر",
+                buyers: "مستاجران",
+                sellers: "موجران"
+            };
+        }
+        return {
+            buyer: "خریدار",
+            seller: "فروشنده",
+            buyers: "خریداران",
+            sellers: "فروشندگان"
+        };
+    }
+
+    function updateParticipantLabels() {
+        const typeSelect = document.getElementById("deal-type");
+        const typeName = typeSelect.options[typeSelect.selectedIndex]?.text || "";
+        const labels = getRoleLabels(typeName);
+        const buyersLabel = document.getElementById("buyers-label");
+        const sellersLabel = document.getElementById("sellers-label");
+        const buyersHelper = document.getElementById("buyers-helper");
+        const summaryBuyersLabel = document.getElementById("summary-buyers-label");
+        const summarySellersLabel = document.getElementById("summary-sellers-label");
+        if (buyersLabel) buyersLabel.textContent = labels.buyers;
+        if (sellersLabel) sellersLabel.textContent = labels.sellers;
+        if (buyersHelper) buyersHelper.textContent = `حداقل یک ${labels.buyer} انتخاب شود (در صورت وجود).`;
+        if (summaryBuyersLabel) summaryBuyersLabel.textContent = `${labels.buyers}:`;
+        if (summarySellersLabel) summarySellersLabel.textContent = `${labels.sellers}:`;
+    }
+
+    function updateStep1State() {
+        const type = document.getElementById("deal-type").value;
+        const amount = parseNumber(document.getElementById("deal-amount").value);
+        document.getElementById("step-1-next").disabled = !type || amount <= 0;
+    }
+
+    function updateSummary() {
+        document.getElementById("summary-id").textContent = state.dealId || "ثبت نشده";
+        document.getElementById("summary-title").textContent = document.getElementById("deal-title").value || "-";
+        const typeSelect = document.getElementById("deal-type");
+        state.dealTypeName = typeSelect.options[typeSelect.selectedIndex]?.text || "";
+        document.getElementById("summary-type").textContent = state.dealTypeName || "-";
+        document.getElementById("summary-amount").textContent = document.getElementById("deal-amount").value || "-";
+        document.getElementById("summary-buyers").textContent = state.buyers.length ? state.buyers.join("، ") : "-";
+        document.getElementById("summary-sellers").textContent = state.sellers.length ? state.sellers.join("، ") : "-";
+        document.getElementById("summary-consultants").textContent = state.selectedConsultants.length ? state.selectedConsultants.join("، ") : "-";
+        updateParticipantLabels();
+    }
+
+    function wireFormatters() {
+        document.querySelectorAll("[data-format='money']").forEach(field => {
+            field.addEventListener("input", (event) => {
+                event.target.value = formatNumberInput(event.target.value);
+                updateSummary();
+                updateStep1State();
+            });
+            field.addEventListener("blur", (event) => {
+                event.target.value = formatNumberInput(event.target.value);
+            });
+        });
+
+        document.querySelectorAll("[data-format='date']").forEach(field => {
+            field.addEventListener("input", (event) => {
+                event.target.value = formatDateInput(event.target.value);
+                updateSummary();
+            });
+            field.addEventListener("blur", (event) => {
+                event.target.value = formatDateInput(event.target.value);
+            });
+        });
+
+        document.getElementById("deal-title").addEventListener("input", updateSummary);
+        document.getElementById("deal-type").addEventListener("change", () => {
+            updateSummary();
+            updateStep1State();
+        });
+    }
+
+    function setActiveStep(step) {
+        document.querySelectorAll(".wizard-step").forEach(el => {
+            el.classList.toggle("active", Number(el.dataset.step) === step);
+        });
+        document.querySelectorAll(".wizard-panel").forEach(el => {
+            el.classList.toggle("active", Number(el.dataset.panel) === step);
+        });
+        clearNotices();
+        if (step === 3) loadConsultants();
+        if (step === 4) {
+            buildClientCommissionsTable();
+            buildConsultantAmounts();
+        }
+        if (step === 5) loadReview();
+    }
+
+    async function request(url, method, data) {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            credentials: "include",
+            body: data ? JSON.stringify(data) : null
+        });
+        const json = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const message = json?.detail || json?.error || "خطا در انجام عملیات";
+            throw new Error(message);
+        }
+        return json;
+    }
+
+    function updateDealUrl(dealId) {
+        return api.updateDealTemplate.replace("/0/", `/${dealId}/`);
+    }
+
+
+    async function loadClients() {
+        const data = await request(api.clientList, "GET");
+        state.clients = data || [];
+        renderClientLists(state.clients);
+    }
+
+    function renderClientLists(clients) {
+        const buyersList = document.getElementById("buyers-list");
+        const sellersList = document.getElementById("sellers-list");
+        const buyerSelected = new Set(state.selectedBuyerIds);
+        const sellerSelected = new Set(state.selectedSellerIds);
+        buyersList.innerHTML = "";
+        sellersList.innerHTML = "";
+        clients.forEach(client => {
+            const nameDisplay = client.national_id ? `${client.name} — کد ملی: ${client.national_id}` : client.name;
+            const buyerLabel = document.createElement("label");
+            buyerLabel.innerHTML = `<input type="checkbox" value="${client.id}" ${buyerSelected.has(client.id) ? "checked" : ""}> <span>${nameDisplay}</span>`;
+            buyersList.appendChild(buyerLabel);
+
+            const sellerLabel = document.createElement("label");
+            sellerLabel.innerHTML = `<input type="checkbox" value="${client.id}" ${sellerSelected.has(client.id) ? "checked" : ""}> <span>${nameDisplay}</span>`;
+            sellersList.appendChild(sellerLabel);
+        });
+
+        buyersList.querySelectorAll("input[type='checkbox']").forEach(input => {
+            input.addEventListener("change", () => {
+                state.selectedBuyerIds = collectSelected("buyers-list");
+                state.buyers = collectSelectedNames("buyers-list");
+                updateSummary();
+            });
+        });
+
+        sellersList.querySelectorAll("input[type='checkbox']").forEach(input => {
+            input.addEventListener("change", () => {
+                state.selectedSellerIds = collectSelected("sellers-list");
+                state.sellers = collectSelectedNames("sellers-list");
+                updateSummary();
+            });
+        });
+    }
+
+    async function loadConsultants() {
+        const data = await request(api.consultantList, "GET");
+        state.consultants = data || [];
+        const list = document.getElementById("consultants-list");
+        list.innerHTML = "";
+        state.consultants.forEach(consultant => {
+            const label = document.createElement("label");
+            const checked = state.selectedConsultantIds.includes(consultant.id) ? "checked" : "";
+            label.innerHTML = `<input type="checkbox" value="${consultant.id}" ${checked}> <span>${consultant.name}</span>`;
+            list.appendChild(label);
+        });
+
+        list.querySelectorAll("input[type='checkbox']").forEach(input => {
+            input.addEventListener("change", () => {
+                state.selectedConsultantIds = collectSelected("consultants-list");
+                state.selectedConsultants = collectSelectedNames("consultants-list");
+                updateSummary();
+            });
+        });
+    }
+
+    function collectSelected(listId) {
+        return Array.from(document.querySelectorAll(`#${listId} input[type="checkbox"]:checked`))
+            .map(input => Number(input.value))
+            .filter(Number.isFinite);
+    }
+
+    function collectSelectedNames(listId) {
+        return Array.from(document.querySelectorAll(`#${listId} input[type="checkbox"]:checked`))
+            .map(input => input.parentElement?.innerText?.trim())
+            .filter(Boolean);
+    }
+
+    function getClientName(clientId) {
+        const c = state.clients.find(x => x.id === clientId);
+        return c ? c.name : "—";
+    }
+
+    function buildClientCommissionsTable() {
+        const tbody = document.getElementById("client-commissions-tbody");
+        if (!tbody) return;
+        const rows = [];
+        const buyerIds = state.selectedBuyerIds || [];
+        const sellerIds = state.selectedSellerIds || [];
+        const labels = getRoleLabels(state.dealTypeName);
+        buyerIds.forEach(id => {
+            rows.push({ client_id: id, role: "buyer", roleLabel: labels.buyer, name: getClientName(id) });
+        });
+        sellerIds.forEach(id => {
+            rows.push({ client_id: id, role: "seller", roleLabel: labels.seller, name: getClientName(id) });
+        });
+        tbody.innerHTML = rows.map((r, i) => `
+            <tr data-client-id="${r.client_id}" data-role="${r.role}">
+                <td>${r.name}</td>
+                <td>${r.roleLabel}</td>
+                <td><input type="text" class="numeric-input client-comm-amount" data-format="money" placeholder="0" value=""></td>
+                <td><input type="text" class="client-comm-desc" placeholder="توضیحات"></td>
+            </tr>
+        `).join("");
+        document.querySelectorAll("#client-commissions-tbody [data-format='money']").forEach(field => {
+            field.addEventListener("input", e => { e.target.value = formatNumberInput(e.target.value); });
+            field.addEventListener("blur", e => { e.target.value = formatNumberInput(e.target.value); });
+        });
+    }
+
+    function buildConsultantAmounts() {
+        const wrap = document.getElementById("consultant-amounts-list");
+        if (!wrap) return;
+        const selected = state.selectedConsultantIds || [];
+        const consultants = state.consultants || [];
+        wrap.innerHTML = selected.map(id => {
+            const c = consultants.find(x => x.id === id);
+            const name = c ? c.name : id;
+            return `<div class="consultant-pct-row"><label>${name}</label><input type="text" class="numeric-input" inputmode="numeric" autocomplete="off" data-format="money" data-consultant-id="${id}" placeholder="0"></div>`;
+        }).join("");
+        wrap.querySelectorAll("[data-format='money']").forEach(field => {
+            field.addEventListener("input", e => { e.target.value = formatNumberInput(e.target.value); });
+            field.addEventListener("blur", e => { e.target.value = formatNumberInput(e.target.value); });
+        });
+    }
+
+    function collectClientCommissionsPayload() {
+        const tbody = document.getElementById("client-commissions-tbody");
+        if (!tbody) return [];
+        const items = [];
+        tbody.querySelectorAll("tr").forEach(tr => {
+            const clientId = tr.dataset.clientId;
+            const role = tr.dataset.role;
+            const amountInput = tr.querySelector(".client-comm-amount");
+            const descInput = tr.querySelector(".client-comm-desc");
+            const amount = amountInput ? parseNumber(amountInput.value) : 0;
+            const description = descInput ? descInput.value.trim() : "";
+            items.push({ client_id: Number(clientId), role, amount: amount || 0, description });
+        });
+        return items;
+    }
+
+    function collectSplitsPayload() {
+        const splits = [];
+        const officeAmount = parseNumber(document.getElementById("office-amount")?.value || "");
+        const managerAmount = parseNumber(document.getElementById("manager-amount")?.value || "");
+        if (officeAmount > 0) splits.push({ role: "office", amount: officeAmount });
+        if (managerAmount > 0) splits.push({ role: "manager", amount: managerAmount });
+        document.querySelectorAll("#consultant-amounts-list input[data-consultant-id]").forEach(input => {
+            const amt = parseNumber(input.value || "");
+            if (amt > 0) splits.push({ role: "consultant", consultant_id: Number(input.dataset.consultantId), amount: amt });
+        });
+        return splits;
+    }
+
+    async function loadReview() {
+        if (!state.dealId) return;
+        const reviewContent = document.getElementById("review-content");
+        const reviewEditButtons = document.getElementById("review-edit-buttons");
+        if (!reviewContent || !reviewEditButtons) return;
+        try {
+            const url = api.dealDetailTemplate + state.dealId + "/";
+            const data = await request(url, "GET");
+            const typeName = data.type && data.type.name ? data.type.name : (data.type || "—");
+            const roleLabels = getRoleLabels(typeName);
+            const buyersList = (data.buyers || []).map(b => b.name).join("، ") || "—";
+            const sellersList = (data.sellers || []).map(s => s.name).join("، ") || "—";
+            const consultantsList = (state.selectedConsultants && state.selectedConsultants.length) ? state.selectedConsultants.join("، ") : "—";
+            const clientComms = (data.client_commissions || []).map(cc => {
+                const roleName = cc.role === "buyer" ? roleLabels.buyer : roleLabels.seller;
+                const amountText = cc.amount != null ? Number(cc.amount).toLocaleString("fa-IR") : "0";
+                return `${cc.client_name} (${roleName}): ${amountText} ریال`;
+            }).join("؛ ") || "—";
+            const splitsList = (data.splits || []).map(s => {
+                const name = s.role === "consultant" && s.consultant_name ? s.consultant_name : (s.role_display || s.role);
+                if (s.amount != null) {
+                    return `${name}: ${Number(s.amount).toLocaleString("fa-IR")} ریال`;
+                }
+                return `${name}: —`;
+            }).join("؛ ") || "—";
+            reviewContent.innerHTML = `
+                <div class="review-block">
+                    <h4>اطلاعات معامله</h4>
+                    <p><strong>عنوان:</strong> ${(data.title || "").trim() || "—"}</p>
+                    <p><strong>نوع:</strong> ${typeName}</p>
+                    <p><strong>مبلغ:</strong> ${data.amount != null ? Number(data.amount).toLocaleString("fa-IR") : "—"} ریال</p>
+                    <p><strong>تاریخ مبایعه:</strong> ${data.agreement_date || "—"}</p>
+                    <p><strong>خیر/ دریافتی:</strong> ${[data.overpayment, data.overpayment_received].map(v => v != null ? Number(v).toLocaleString("fa-IR") : "—").join(" / ")}</p>
+                </div>
+                <div class="review-block">
+                    <h4>مشتریان</h4>
+                    <p><strong>${roleLabels.buyers}:</strong> ${buyersList}</p>
+                    <p><strong>${roleLabels.sellers}:</strong> ${sellersList}</p>
+                </div>
+                <div class="review-block">
+                    <h4>مشاوران</h4>
+                    <p>${consultantsList}</p>
+                </div>
+                <div class="review-block">
+                    <h4>کمیسیون مشتریان و سهم مشاوران</h4>
+                    <p><strong>کمیسیون قابل‌پرداخت مشتریان:</strong> ${clientComms}</p>
+                    <p><strong>سهم دفتر/مدیر/مشاوران:</strong> ${splitsList}</p>
+                </div>
+            `;
+            reviewEditButtons.innerHTML = `
+                <button type="button" class="btn-edit-step" data-goto="1">ویرایش مرحله ۱ (اطلاعات معامله)</button>
+                <button type="button" class="btn-edit-step" data-goto="2">ویرایش مرحله ۲ (مشتریان)</button>
+                <button type="button" class="btn-edit-step" data-goto="3">ویرایش مرحله ۳ (مشاوران)</button>
+                <button type="button" class="btn-edit-step" data-goto="4">ویرایش مرحله ۴ (مالی)</button>
+            `;
+            reviewEditButtons.querySelectorAll(".btn-edit-step").forEach(btn => {
+                btn.addEventListener("click", () => setActiveStep(Number(btn.dataset.goto)));
+            });
+        } catch (err) {
+            reviewContent.innerHTML = "<p class=\"notice-error\">خطا در بارگذاری اطلاعات معامله.</p>";
+            showError(err.message);
+        }
+    }
+
+    // بارگذاری معامله موجود از query parameter
+    async function loadExistingDeal() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dealIdParam = urlParams.get("deal_id");
+        if (!dealIdParam) return;
+
+        const dealId = Number(dealIdParam);
+        if (Number.isNaN(dealId) || dealId <= 0) return;
+
+        try {
+            const url = api.dealDetailTemplate + dealId + "/";
+            const data = await request(url, "GET");
+
+            // بررسی وضعیت معامله - فقط معاملات غیرتایید شده قابل ویرایش هستند
+            if (data.status === "approved") {
+                showError("معاملات تایید شده قابل ویرایش نیستند.");
+                setTimeout(() => {
+                    window.location.href = api.dashboard;
+                }, 2000);
+                return;
+            }
+
+            // تنظیم state
+            state.dealId = data.id;
+            state.dealTypeName = data.type && data.type.name ? data.type.name : "";
+
+            // پر کردن فرم مرحله 1
+            if (data.title) document.getElementById("deal-title").value = data.title;
+            if (data.type && data.type.id) document.getElementById("deal-type").value = data.type.id;
+            if (data.amount != null) document.getElementById("deal-amount").value = formatNumberInput(String(data.amount));
+            if (data.agreement_date) document.getElementById("deal-agreement-date").value = data.agreement_date;
+            if (data.office_date) document.getElementById("deal-office-date").value = data.office_date;
+            if (data.base_price != null) document.getElementById("deal-base-price").value = formatNumberInput(String(data.base_price));
+            if (data.overpayment != null) document.getElementById("deal-overpayment").value = formatNumberInput(String(data.overpayment));
+            if (data.overpayment_received != null) document.getElementById("deal-overpayment-received").value = formatNumberInput(String(data.overpayment_received));
+
+            // بارگذاری مشتریان
+            await loadClients();
+
+            // تنظیم خریداران و فروشندگان
+            if (data.buyers && Array.isArray(data.buyers)) {
+                state.selectedBuyerIds = data.buyers.map(b => b.id).filter(Boolean);
+                state.buyers = data.buyers.map(b => b.name).filter(Boolean);
+                updateBuyersList();
+            }
+            if (data.sellers && Array.isArray(data.sellers)) {
+                state.selectedSellerIds = data.sellers.map(s => s.id).filter(Boolean);
+                state.sellers = data.sellers.map(s => s.name).filter(Boolean);
+                updateSellersList();
+            }
+
+            // بارگذاری مشاوران
+            await loadConsultants();
+
+            // تنظیم مشاوران
+            if (data.consultants && Array.isArray(data.consultants)) {
+                state.selectedConsultantIds = data.consultants.map(c => c.id).filter(Boolean);
+                state.selectedConsultants = data.consultants.map(c => c.name).filter(Boolean);
+                updateConsultantsList();
+            }
+
+            // بارگذاری کمیسیون مشتریان
+            if (data.client_commissions && Array.isArray(data.client_commissions)) {
+                data.client_commissions.forEach(cc => {
+                    const input = document.querySelector(`input[data-client-id="${cc.client_id}"][data-role="${cc.role}"]`);
+                    if (input && cc.amount != null) {
+                        input.value = formatNumberInput(String(cc.amount));
+                    }
+                });
+            }
+
+            // بارگذاری تسهیم کمیسیون
+            if (data.splits && Array.isArray(data.splits)) {
+                data.splits.forEach(split => {
+                    if (split.role === "consultant" && split.consultant_id) {
+                        const input = document.querySelector(`input[data-consultant-id="${split.consultant_id}"]`);
+                        if (input && split.amount != null) {
+                            input.value = formatNumberInput(String(split.amount));
+                        }
+                    } else if (split.role === "office" && split.amount != null) {
+                        const officeInput = document.getElementById("office-amount");
+                        if (officeInput) officeInput.value = formatNumberInput(String(split.amount));
+                    } else if (split.role === "manager" && split.amount != null) {
+                        const managerInput = document.getElementById("manager-amount");
+                        if (managerInput) managerInput.value = formatNumberInput(String(split.amount));
+                    }
+                });
+            }
+
+            updateParticipantLabels();
+            updateSummary();
+            updateStep1State();
+            showSuccess("معامله با موفقیت بارگذاری شد. می‌توانید آن را ویرایش کنید.");
+        } catch (err) {
+            showError("خطا در بارگذاری معامله: " + err.message);
+        }
+    }
+
+    function updateBuyersList() {
+        const container = document.getElementById("selected-buyers");
+        if (!container) return;
+        container.innerHTML = state.buyers.map((name, idx) => {
+            const id = state.selectedBuyerIds[idx];
+            return `<span class="selected-tag" data-id="${id}">${name} <button type="button" class="remove-tag" data-role="buyer" data-id="${id}">×</button></span>`;
+        }).join("");
+        attachRemoveListeners();
+    }
+
+    function updateSellersList() {
+        const container = document.getElementById("selected-sellers");
+        if (!container) return;
+        container.innerHTML = state.sellers.map((name, idx) => {
+            const id = state.selectedSellerIds[idx];
+            return `<span class="selected-tag" data-id="${id}">${name} <button type="button" class="remove-tag" data-role="seller" data-id="${id}">×</button></span>`;
+        }).join("");
+        attachRemoveListeners();
+    }
+
+    function updateConsultantsList() {
+        const container = document.getElementById("selected-consultants");
+        if (!container) return;
+        container.innerHTML = state.selectedConsultants.map((name, idx) => {
+            const id = state.selectedConsultantIds[idx];
+            return `<span class="selected-tag" data-id="${id}">${name} <button type="button" class="remove-tag" data-role="consultant" data-id="${id}">×</button></span>`;
+        }).join("");
+        attachRemoveListeners();
+    }
+
+    function attachRemoveListeners() {
+        document.querySelectorAll(".remove-tag").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const role = this.dataset.role;
+                const id = Number(this.dataset.id);
+                if (role === "buyer") {
+                    state.selectedBuyerIds = state.selectedBuyerIds.filter(i => i !== id);
+                    const client = state.clients.find(c => c.id === id);
+                    state.buyers = state.buyers.filter((_, idx) => state.selectedBuyerIds[idx] !== undefined);
+                } else if (role === "seller") {
+                    state.selectedSellerIds = state.selectedSellerIds.filter(i => i !== id);
+                    state.sellers = state.sellers.filter((_, idx) => state.selectedSellerIds[idx] !== undefined);
+                } else if (role === "consultant") {
+                    state.selectedConsultantIds = state.selectedConsultantIds.filter(i => i !== id);
+                    state.selectedConsultants = state.selectedConsultants.filter((_, idx) => state.selectedConsultantIds[idx] !== undefined);
+                }
+                updateBuyersList();
+                updateSellersList();
+                updateConsultantsList();
+                updateSummary();
+            });
+        });
+    }
+
+    wireFormatters();
+    updateSummary();
+    updateStep1State();
+
+    loadExistingDeal();
+
+    document.getElementById("step-1-next").addEventListener("click", async () => {
+        clearNotices();
+        const type = document.getElementById("deal-type").value;
+        const typeName = document.getElementById("deal-type").options[document.getElementById("deal-type").selectedIndex]?.text || "";
+        const amountRaw = document.getElementById("deal-amount").value;
+        const amount = parseNumber(amountRaw);
+        const agreementDate = document.getElementById("deal-agreement-date").value;
+        const officeDate = document.getElementById("deal-office-date").value;
+        if (!type || !amountRaw || Number.isNaN(amount) || amount <= 0) {
+            showError("نوع معامله و مبلغ کل (مقدار معتبر) الزامی است.");
+            return;
+        }
+        if (!isValidDateValue(agreementDate) || !isValidDateValue(officeDate)) {
+            showError("تاریخ‌ها باید به صورت ۱۴۰۲/۰۳/۱۶ وارد شوند.");
+            return;
+        }
+        try {
+            const payload = {
+                title: document.getElementById("deal-title").value || null,
+                type: Number(type),
+                amount,
+                agreement_date: agreementDate || null,
+                office_date: officeDate || null
+            };
+            let data;
+            if (state.dealId) {
+                data = await request(updateDealUrl(state.dealId), "PUT", payload);
+                showSuccess("مرحله اول به‌روزرسانی شد. لطفاً طرفین معامله را بررسی کنید.");
+            } else {
+                data = await request(api.createDeal, "POST", payload);
+                state.dealId = data.id;
+                showSuccess("مرحله اول ثبت شد. لطفاً طرفین معامله را انتخاب کنید.");
+            }
+            state.dealTypeName = typeName;
+            updateSummary();
+            await loadClients();
+            setActiveStep(2);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("client-search").addEventListener("input", (event) => {
+        const query = event.target.value.trim();
+        if (!query) {
+            renderClientLists(state.clients);
+            return;
+        }
+        const filtered = state.clients.filter(client => {
+            const text = `${client.name} ${client.phone || ""} ${client.national_id || ""}`.toLowerCase();
+            return text.includes(query.toLowerCase());
+        });
+        renderClientLists(filtered);
+    });
+
+    function openClientModal() {
+        const modal = document.getElementById("client-modal-overlay");
+        if (!modal) return;
+        modal.style.display = "flex";
+        modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeClientModal() {
+        const modal = document.getElementById("client-modal-overlay");
+        if (!modal) return;
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+    }
+
+    document.getElementById("open-client-modal").addEventListener("click", openClientModal);
+    document.getElementById("close-client-modal").addEventListener("click", closeClientModal);
+    document.getElementById("cancel-client-modal").addEventListener("click", closeClientModal);
+    document.getElementById("client-modal-overlay").addEventListener("click", closeClientModal);
+
+    document.getElementById("save-client-modal").addEventListener("click", async () => {
+        clearNotices();
+        const name = document.getElementById("client-name").value.trim();
+        const phone = document.getElementById("client-phone").value.trim();
+        const fatherName = document.getElementById("client-father-name").value.trim();
+        const nationalId = document.getElementById("client-national-id").value.trim();
+        const birthDate = document.getElementById("client-birth-date").value.trim();
+        const cityOfIssuance = document.getElementById("client-city-issuance").value.trim();
+        if (!name) {
+            showError("نام شخص جدید الزامی است.");
+            return;
+        }
+        try {
+            const payload = {
+                name,
+                phone_number: phone || null,
+                father_name: fatherName || null,
+                national_id: nationalId || null,
+                birth_date: birthDate || null,
+                city_of_issuance: cityOfIssuance || null
+            };
+            const data = await request(api.clientList, "POST", payload);
+            state.clients.push({ id: data.id, name: data.name, phone: data.phone, national_id: data.national_id || null });
+            renderClientLists(state.clients);
+            document.getElementById("client-name").value = "";
+            document.getElementById("client-phone").value = "";
+            document.getElementById("client-father-name").value = "";
+            document.getElementById("client-national-id").value = "";
+            document.getElementById("client-birth-date").value = "";
+            document.getElementById("client-city-issuance").value = "";
+            showSuccess("شخص جدید اضافه شد.");
+            closeClientModal();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("step-2-next").addEventListener("click", async () => {
+        clearNotices();
+        const buyers = collectSelected("buyers-list");
+        const sellers = collectSelected("sellers-list");
+        if (!state.dealId) {
+            showError("ابتدا مرحله اول را ثبت کنید.");
+            return;
+        }
+        try {
+            await request(updateDealUrl(state.dealId), "PUT", {
+                buyers,
+                sellers
+            });
+            state.selectedBuyerIds = buyers;
+            state.selectedSellerIds = sellers;
+            state.buyers = collectSelectedNames("buyers-list");
+            state.sellers = collectSelectedNames("sellers-list");
+            updateSummary();
+            showSuccess("طرفین معامله ثبت شد.");
+            setActiveStep(3);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("step-3-next").addEventListener("click", async () => {
+        clearNotices();
+        if (!state.dealId) {
+            showError("ابتدا مرحله اول را ثبت کنید.");
+            return;
+        }
+        const consultants = collectSelected("consultants-list");
+        state.selectedConsultantIds = consultants;
+        state.selectedConsultants = collectSelectedNames("consultants-list");
+        try {
+            await request(updateDealUrl(state.dealId), "PUT", { consultants });
+            updateSummary();
+            showSuccess("مشاوران ثبت شد. در مرحله بعد مبالغ و کمیسیون‌ها را وارد کنید.");
+            setActiveStep(4);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("step-4-next").addEventListener("click", async () => {
+        clearNotices();
+        if (!state.dealId) {
+            showError("ابتدا مرحله اول را ثبت کنید.");
+            return;
+        }
+        try {
+            const overpayment = document.getElementById("deal-overpayment").value;
+            const received = document.getElementById("deal-overpayment-received").value;
+            const payload = {};
+            if (overpayment) payload.overpayment = parseNumber(overpayment);
+            if (received) payload.overpayment_received = parseNumber(received);
+            await request(updateDealUrl(state.dealId), "PUT", payload);
+
+            const clientCommissions = collectClientCommissionsPayload();
+            await request(api.clientCommissionsBulkTemplate + state.dealId + "/", "PUT", { client_commissions: clientCommissions });
+
+            const splits = collectSplitsPayload();
+            await request(api.commissionSplitsBulkTemplate + state.dealId + "/", "PUT", { splits });
+
+            showSuccess("اطلاعات مالی ثبت شد. در مرحله بعد بررسی و ثبت نهایی کنید.");
+            setActiveStep(5);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("step-5-submit").addEventListener("click", async () => {
+        clearNotices();
+        if (!state.dealId) {
+            showError("معامله‌ای برای ثبت نهایی یافت نشد.");
+            return;
+        }
+        try {
+            await request(updateDealUrl(state.dealId), "PUT", { status: "pending" });
+            updateSummary();
+            showSuccess("ثبت نهایی انجام شد. وضعیت معامله اکنون «در انتظار تایید مدیر» است.");
+            document.getElementById("summary-status").textContent = "در انتظار تایید";
+            document.getElementById("summary-actions").innerHTML = `
+                <a class="btn-secondary" href="{% url 'dashboard' %}">داشبورد</a>
+            `;
+            setTimeout(() => {
+                window.location.href = "{% url 'dashboard' %}";
+            }, 1200);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.querySelectorAll("[data-back]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const current = Number(document.querySelector(".wizard-panel.active").dataset.panel);
+            setActiveStep(Math.max(1, current - 1));
+        });
+    });
+
+    document.querySelectorAll(".wizard-step").forEach(el => {
+        el.addEventListener("click", () => {
+            const step = Number(el.dataset.step);
+            if (step === 1) {
+                setActiveStep(1);
+                return;
+            }
+            if (!state.dealId && step > 1) {
+                showError("ابتدا مرحله اول (اطلاعات معامله) را ثبت کنید.");
+                return;
+            }
+            setActiveStep(step);
+        });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}نمایش/چاپ مبایعه‌نامه{% endblock %}
+{% block body_class %}contract-print-page{% endblock %}
+{% block extra_head %}
+  <style>
+    .print-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+        gap: 18px;
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    .panel {
+        border-radius: 20px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+        background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+        box-shadow: var(--shadow-soft);
+        padding: 14px;
+    }
+
+    .panel h2 {
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-family: var(--font-title);
+        color: var(--color-text);
+    }
+
+    .action-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: sticky;
+        top: 18px;
+        height: fit-content;
+    }
+
+    .action-stack a,
+    .action-stack button {
+        width: 100%;
+    }
+
+    .btn-red {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #fff;
+        box-shadow: 0 12px 30px rgba(220,38,38,0.25);
+        border: none;
+        padding: 11px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-red:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+    .btn-green {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #ecfdf5;
+        box-shadow: 0 12px 30px rgba(22,163,74,0.25);
+        border: none;
+        padding: 11px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-green:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+    .btn-purple {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: #f5f3ff;
+        box-shadow: 0 12px 30px rgba(124,58,237,0.22);
+        border: none;
+        padding: 11px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-purple:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+    .save-template-box {
+        display: none;
+        margin-top: 6px;
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+        background: color-mix(in srgb, var(--color-surface-alt) 70%, transparent);
+        padding: 10px;
+    }
+
+    .save-template-box input {
+        width: 100%;
+        padding: 10px 10px;
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+        background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+        color: var(--color-text);
+        font-size: 12px;
+        outline: none;
+    }
+
+    .save-template-box input::placeholder { color: var(--color-text-muted); }
+
+    .save-template-box button {
+        width: 100%;
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+        background: transparent;
+        color: var(--color-text);
+        cursor: pointer;
+        font-weight: 800;
+        font-size: 12px;
+    }
+
+    .save-template-box button:hover {
+        background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+        border-color: rgba(96,165,250,0.65);
+    }
+
+    .paper {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid rgba(148,163,184,0.35);
+        box-shadow: 0 18px 55px rgba(15, 23, 42, 0.18);
+        padding: 18px;
+        overflow: hidden;
+        position: relative;
+        color: #111827;
+    }
+
+    .paper .content {
+        max-width: 820px;
+        margin: 0 auto;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        line-height: 2;
+        font-size: 14px;
+    }
+
+    .draft-watermark {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-title);
+        font-weight: 900;
+        font-size: 72px;
+        color: rgba(239, 68, 68, 0.10);
+        transform: rotate(-20deg);
+        user-select: none;
+    }
+
+    @media print {
+        header.shell-header, .theme-toggle, .user-chip, .logout-link { display: none !important; }
+        body { background: white !important; }
+        .shell-content { padding: 0 !important; }
+        .page-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+        .page-card::before { display: none !important; }
+        .page-card-inner { padding: 0 !important; }
+        .page-title, .page-subtitle { display: none !important; }
+        .action-stack, .no-print { display: none !important; }
+        .panel { border: none !important; box-shadow: none !important; padding: 0 !important; background: transparent !important; }
+        .paper { box-shadow: none !important; border: none !important; padding: 0 !important; }
+        .draft-watermark { display: none !important; }
+    }
+
+    @media (max-width: 980px) {
+        .print-grid { grid-template-columns: minmax(0, 1fr); }
+        .action-stack { position: static; }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <section class="page-card">
+    <div class="page-card-inner">
+      <h1 class="page-title">
+        نمایش/چاپ مبایعه‌نامه
+        <span>مرحله ۴ از ۴</span>
+      </h1>
+      <p class="page-subtitle">
+        از اینجا می‌توانید نسخه چاپی را ببینید، PDF دریافت کنید، نهایی‌سازی انجام دهید و در صورت نیاز به عنوان قالب ذخیره کنید.
+      </p>
+      {% if messages %}
+        <div class="mt-2 no-print">
+          {% for message in messages %}
+            <div class="helper-text"
+                 style="background: rgba(34,197,94,0.15);
+                        border: 1px solid rgba(34,197,94,0.35);
+                        border-radius: 16px;
+                        padding: 10px 12px;
+                        color: var(--color-text);
+                        font-size: 12px">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <div class="print-grid">
+        <div class="panel">
+          <h2>نسخه قرارداد</h2>
+          <div class="paper">
+            {% if not contract.is_finalized %}<div class="draft-watermark">پیش‌نویس</div>{% endif %}
+            <div class="content">{{ contract.content|safe }}</div>
+          </div>
+        </div>
+        <aside class="action-stack no-print">
+          <button type="button" class="btn-primary" onclick="window.print()">چاپ مرورگر</button>
+          {% if not contract.is_finalized %}
+            <form action="{% url 'finalize_contract' contract.id %}"
+                  method="post"
+                  style="margin:0">
+              {% csrf_token %}
+              <button type="submit"
+                      class="btn-green"
+                      onclick="return confirm('آیا از نهایی‌سازی اطمینان دارید؟')">نهایی‌سازی</button>
+            </form>
+            <a href="{% url 'contract_pdf' contract.id %}"
+               target="_blank"
+               class="btn-purple">دانلود پیش‌نویس PDF</a>
+          {% else %}
+            <a href="{% url 'contract_pdf' contract.id %}"
+               target="_blank"
+               class="btn-red">دانلود PDF نهایی</a>
+          {% endif %}
+          <button type="button"
+                  class="btn-ghost"
+                  onclick="toggleSaveBox()"
+                  style="width:100%">ذخیره به عنوان قالب</button>
+          <div id="saveTemplateBox" class="save-template-box">
+            <form action="{% url 'save_contract_as_template' contract.id %}"
+                  method="post">
+              {% csrf_token %}
+              <input type="text"
+                     name="template_title"
+                     required
+                     placeholder="مثلاً: فروش آپارتمان">
+              <button type="submit">ثبت قالب</button>
+            </form>
+          </div>
+          <a href="{% url 'contract_edit' contract.id %}" class="btn-ghost">بازگشت به ویرایش</a>
+          <a href="{% url 'dashboard' %}" class="btn-ghost">بازگشت به داشبورد</a>
+        </aside>
+      </div>
+    </div>
+  </section>
+  <script class="no-print">
+    function toggleSaveBox() {
+        var box = document.getElementById("saveTemplateBox");
+        if (!box) return;
+        box.style.display = (box.style.display === "block") ? "none" : "block";
+    }
+  </script>
+{% endblock %}

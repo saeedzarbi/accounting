@@ -1,0 +1,145 @@
+{% extends 'dashboard_base.html' %}
+{% block content %}
+  <div class="max-w-4xl mx-auto p-6">
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
+        <svg class="w-6 h-6 mr-3 text-blue-500"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+        جزئیات معامله: {{ deal.title }}
+      </h1>
+      <p class="text-gray-600 dark:text-gray-400">تاریخ ایجاد: {{ deal.date }}</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="bg-blue-50 dark:bg-blue-900/20 p-5 border-b border-blue-100 dark:border-blue-800">
+          <h2 class="text-xl font-bold text-blue-700 dark:text-blue-300">اطلاعات معامله</h2>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="flex justify-between">
+            <span class="font-medium text-gray-600 dark:text-gray-300">نوع معامله:</span>
+            <span class="font-semibold text-gray-800 dark:text-white">{{ deal.type.name }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium text-gray-600 dark:text-gray-300">وضعیت:</span>
+            <span class="font-semibold {% if deal.status == 'init' %}text-yellow-500 {% elif deal.status == 'pendding' %}text-orange-500 {% else %}text-green-500 {% endif %}">
+              {{ deal.get_status_display }}
+            </span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium text-gray-600 dark:text-gray-300">تاریخ مبایعه نامه:</span>
+            <span class="font-semibold text-gray-800 dark:text-white">{{ deal.agreement_date }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-medium text-gray-600 dark:text-gray-300">توضیحات:</span>
+            <span class="font-semibold text-gray-800 dark:text-white line-clamp-2">{{ deal.description|default:"ندارد" }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="bg-green-50 dark:bg-green-900/20 p-5 border-b border-green-100 dark:border-green-800">
+          <h2 class="text-xl font-bold text-green-700 dark:text-green-300">اطلاعات مالی</h2>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="flex justify-between">
+            <span class="font-medium text-gray-600 dark:text-gray-300">مبلغ کل:</span>
+            <span class="font-bold text-green-600 dark:text-green-400 text-lg">{{ deal.amount }} ریال</span>
+          </div>
+          <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+            <h3 class="font-semibold text-gray-800 dark:text-white mb-2">کمیسیون‌ها:</h3>
+            {% for split in deal.splits.all %}
+              <div class="flex justify-between py-2">
+                <span class="text-gray-600 dark:text-gray-300">{{ split.get_role_display }}</span>
+                <span class="font-semibold text-gray-800 dark:text-white">
+                  {% if split.amount != None %}
+                    {{ split.amount|floatformat:0 }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div class="bg-purple-50 dark:bg-purple-900/20 p-5 border-b border-purple-100 dark:border-purple-800">
+        <h2 class="text-xl font-bold text-purple-700 dark:text-purple-300">اطلاعات فروشندگان</h2>
+      </div>
+      <div class="p-6 space-y-4">
+        {% if deal.sellers.all %}
+          {% for seller in deal.sellers.all %}
+            <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 w-10 h-10 rounded-full flex items-center justify-center mr-4">
+                <span class="font-bold">{{ seller.name|slice:":1" }}</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-gray-800 dark:text-white">{{ seller.name }}</h3>
+                <p class="text-gray-600 dark:text-gray-300 text-sm">{{ seller.phone|default:"شماره تلفن ندارد" }}</p>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-500 dark:text-gray-400 text-center py-4">فروشنده‌ای وجود ندارد</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div class="bg-yellow-50 dark:bg-yellow-900/20 p-5 border-b border-yellow-100 dark:border-yellow-800">
+        <h2 class="text-xl font-bold text-yellow-700 dark:text-yellow-300">اطلاعات خریداران</h2>
+      </div>
+      <div class="p-6 space-y-4">
+        {% if deal.buyers.all %}
+          {% for buyer in deal.buyers.all %}
+            <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="bg-yellow-100 dark:bg-yellow-800 text-yellow-700 dark:text-yellow-200 w-10 h-10 rounded-full flex items-center justify-center mr-4">
+                <span class="font-bold">{{ buyer.name|slice:":1" }}</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-gray-800 dark:text-white">{{ buyer.name }}</h3>
+                <p class="text-gray-600 dark:text-gray-300 text-sm">{{ buyer.phone|default:"شماره تلفن ندارد" }}</p>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-500 dark:text-gray-400 text-center py-4">خریداری وجود ندارد</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div class="bg-indigo-50 dark:bg-indigo-900/20 p-5 border-b border-indigo-100 dark:border-indigo-800">
+        <h2 class="text-xl font-bold text-indigo-700 dark:text-indigo-300">مشاوران و مبالغ</h2>
+      </div>
+      <div class="p-6 space-y-4">
+        {% if deal.consultants.all %}
+          {% for consultant in deal.consultants.all %}
+            <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="flex items-center">
+                <div class="bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-200 w-8 h-8 rounded-full flex items-center justify-center mr-3">
+                  {{ consultant.name|slice:":1" }}
+                </div>
+                <div>
+                  <h3 class="font-semibold text-gray-800 dark:text-white">{{ consultant.name }}</h3>
+                  <p class="text-gray-600 dark:text-gray-300 text-sm">{{ consultant.phone|default:"شماره تلفن ندارد" }}</p>
+                </div>
+              </div>
+              <div class="font-semibold text-indigo-600 dark:text-indigo-300">
+                {% for split in deal.splits.all %}
+                  {% if split.role == 'consultant' and split.consultant_id == consultant.id and split.amount != None %}
+                    {{ split.amount|floatformat:0 }}
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-500 dark:text-gray-400 text-center py-4">مشاوری وجود ندارد</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8">
+    <title>
+      {% block title %}سامانه حسابداری املاک{% endblock %}
+    </title>
+    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon"
+          href="{% static 'images/icon-192.png' %}"
+          type="image/png"
+          sizes="192x192">
+    <link rel="apple-touch-icon" href="{% static 'images/icon-192.png' %}">
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    <div class="app-shell">
+      <div class="shell-main">
+        <header class="shell-header">
+          <div class="shell-logo">
+            <div class="logo-mark">ر</div>
+            <div>
+              <div class="logo-text-main">سامانه حسابداری املاک</div>
+              <div class="logo-text-sub">کنترل قراردادها و جریان نقدی بنگاه</div>
+            </div>
+          </div>
+          <div class="shell-header-right">
+            <button type="button"
+                    class="theme-toggle"
+                    id="themeToggle"
+                    aria-label="تغییر تم">
+              <span id="themeToggleIcon" aria-hidden="true">◐</span>
+              <span id="themeToggleText">تم</span>
+            </button>
+            {% if request.user.is_authenticated %}
+              <div class="user-chip">
+                <div class="user-avatar">{{ request.user.first_name|default:request.user.username|slice:":1" }}</div>
+                <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+              </div>
+              <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-link">خروج</button>
+              </form>
+            {% else %}
+              <span class="text-xs text-muted">ورود به پنل مدیریت مالی املاک</span>
+            {% endif %}
+          </div>
+        </header>
+        <main class="shell-content">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+    {% block modals %}{% endblock %}
+    {% block extra_scripts %}{% endblock %}
+    <script>
+    (function () {
+        var KEY = "ui_theme";
+        var root = document.documentElement;
+        var toggle = document.getElementById("themeToggle");
+        var text = document.getElementById("themeToggleText");
+        var icon = document.getElementById("themeToggleIcon");
+
+        function resolveInitialTheme() {
+            var saved = null;
+            try { saved = localStorage.getItem(KEY); } catch (e) {}
+            if (saved === "light" || saved === "dark") return saved;
+            if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) return "light";
+            return "dark";
+        }
+
+        function applyTheme(theme) {
+            root.setAttribute("data-theme", theme);
+            if (text) text.textContent = (theme === "light") ? "روشن" : "تاریک";
+            if (icon) icon.textContent = (theme === "light") ? "☀" : "☾";
+        }
+
+        var current = resolveInitialTheme();
+        applyTheme(current);
+
+        if (toggle) {
+            toggle.addEventListener("click", function () {
+                current = (root.getAttribute("data-theme") === "light") ? "dark" : "light";
+                applyTheme(current);
+                try { localStorage.setItem(KEY, current); } catch (e) {}
+            });
+        }
+    })();
+    </script>
+  </body>
+</html>

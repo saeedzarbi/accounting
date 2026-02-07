@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+{% block title %}مدیریت حساب‌ها — سامانه حسابداری املاک{% endblock %}
+{% block body_class %}accounts-page{% endblock %}
+{% block extra_head %}
+  <style>
+    .accounts-page .shell-content {
+        align-items: flex-start;
+        padding-top: 1.5rem;
+        padding-bottom: 3rem;
+    }
+
+    .accounts-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .accounts-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+    }
+
+    .accounts-back:hover {
+        color: var(--color-accent);
+    }
+
+    .accounts-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+        padding-bottom: 0;
+    }
+
+    .accounts-tab {
+        padding: 12px 20px;
+        font-size: 15px;
+        color: var(--color-text-muted);
+        text-decoration: none;
+        border-radius: 12px 12px 0 0;
+        border: 1px solid transparent;
+        border-bottom: none;
+        margin-bottom: -1px;
+        transition: color 0.2s, background 0.2s;
+    }
+
+    .accounts-tab:hover {
+        color: var(--color-text);
+    }
+
+    .accounts-tab.is-active {
+        color: var(--color-accent);
+        background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    .accounts-tab-content {
+        display: none;
+        animation: tabFade 0.2s ease;
+    }
+
+    .accounts-tab-content.is-active {
+        display: block;
+    }
+
+    @keyframes tabFade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .tab-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .tab-toolbar h2 {
+        margin: 0;
+        font-size: 17px;
+        font-family: var(--font-title);
+        color: var(--color-text-muted);
+    }
+
+    .btn-add {
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-size: 13px;
+        background: var(--color-accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-add:hover {
+        background: var(--color-accent-soft);
+    }
+
+    .accounts-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .accounts-table th,
+    .accounts-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        text-align: right;
+    }
+
+    .accounts-table th {
+        color: var(--color-text-muted);
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .accounts-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .btn-small {
+        padding: 7px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        color: var(--color-text-muted);
+        background: transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+    }
+
+    .btn-small:hover {
+        color: var(--color-text);
+        border-color: rgba(148, 163, 184, 0.7);
+    }
+
+    .btn-danger {
+        border-color: rgba(248, 113, 113, 0.6);
+        color: #fecaca;
+        background: rgba(127, 29, 29, 0.25);
+    }
+
+    .btn-danger:hover {
+        border-color: rgba(248, 113, 113, 0.9);
+        background: rgba(127, 29, 29, 0.4);
+    }
+
+    /* حالت روشن: دکمه‌ها و متن خواناتر */
+    html[data-theme="light"] .accounts-page .btn-small {
+        color: #334155;
+        border-color: #94a3b8;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    html[data-theme="light"] .accounts-page .btn-small:hover {
+        color: #0f172a;
+        border-color: #64748b;
+        background: #f1f5f9;
+    }
+    html[data-theme="light"] .accounts-page .btn-danger {
+        color: #b91c1c;
+        border-color: #dc2626;
+        background: #fef2f2;
+        font-weight: 600;
+    }
+    html[data-theme="light"] .accounts-page .btn-danger:hover {
+        border-color: #b91c1c;
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    html[data-theme="light"] .accounts-page .accounts-table th,
+    html[data-theme="light"] .accounts-page .accounts-table td {
+        color: #334155;
+        font-size: 14px;
+    }
+    html[data-theme="light"] .accounts-page .accounts-table th {
+        color: #475569;
+        font-weight: 700;
+    }
+    html[data-theme="light"] .accounts-page .accounts-tab {
+        color: #64748b;
+        font-size: 15px;
+    }
+    html[data-theme="light"] .accounts-page .accounts-tab:hover,
+    html[data-theme="light"] .accounts-page .accounts-tab.is-active {
+        color: #1d4ed8;
+    }
+    html[data-theme="light"] .accounts-page .tab-toolbar h2 {
+        color: #475569;
+        font-size: 18px;
+    }
+    html[data-theme="light"] .accounts-page .empty-state {
+        color: #64748b;
+        font-size: 15px;
+    }
+    html[data-theme="light"] .accounts-page .btn-add {
+        font-weight: 600;
+        font-size: 14px;
+    }
+    html[data-theme="light"] .accounts-page .pagination-wrap a,
+    html[data-theme="light"] .accounts-page .pagination-wrap span {
+        color: #475569;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    html[data-theme="light"] .accounts-page .pagination-wrap a:hover {
+        color: #1d4ed8;
+    }
+    html[data-theme="light"] .accounts-page .pagination-wrap .current {
+        color: #fff;
+    }
+    html[data-theme="light"] .accounts-page .accounts-back {
+        color: #64748b;
+        font-size: 14px;
+    }
+    html[data-theme="light"] .accounts-page .accounts-back:hover {
+        color: #1d4ed8;
+    }
+    html[data-theme="light"] .accounts-page .message-item {
+        color: #334155;
+        border-color: #cbd5e1;
+        background: #eff6ff;
+    }
+    html[data-theme="light"] .accounts-page .message-item.error {
+        color: #991b1b;
+        border-color: #fca5a5;
+        background: #fef2f2;
+    }
+    html[data-theme="light"] .accounts-page .modal-header h3,
+    html[data-theme="light"] .accounts-page .modal-body .form-label {
+        color: #334155;
+    }
+    html[data-theme="light"] .accounts-page .modal-close {
+        color: #64748b;
+    }
+    html[data-theme="light"] .accounts-page .modal-close:hover {
+        color: #334155;
+    }
+
+    .empty-state {
+        padding: 24px 16px;
+        color: var(--color-text-muted);
+        font-size: 14px;
+        text-align: center;
+        border: 1px dashed rgba(148, 163, 184, 0.3);
+        border-radius: 16px;
+    }
+
+    .message-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem;
+        display: grid;
+        gap: 10px;
+    }
+
+    .message-item {
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(37, 99, 235, 0.12);
+        font-size: 13px;
+    }
+
+    .message-item.error {
+        border-color: rgba(248, 113, 113, 0.5);
+        background: rgba(127, 29, 29, 0.25);
+        color: #fecaca;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .modal-overlay.is-open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal-box {
+        background: var(--color-surface);
+        border-radius: 20px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        box-shadow: var(--shadow-xl);
+        max-width: 520px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: auto;
+        transform: scale(0.95);
+        transition: transform 0.2s;
+    }
+
+    .modal-overlay.is-open .modal-box {
+        transform: scale(1);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-family: var(--font-title);
+    }
+
+    .modal-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-close:hover {
+        color: var(--color-text);
+        border-color: rgba(148, 163, 184, 0.5);
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-body .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .modal-body .btn-primary {
+        width: auto;
+        padding: 10px 22px;
+        border-radius: 14px;
+        font-size: 13px;
+        margin-top: 12px;
+    }
+
+    /* Pagination */
+    .pagination-wrap {
+        margin-top: 1.25rem;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .pagination-wrap a,
+    .pagination-wrap span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 10px;
+        font-size: 13px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        color: var(--color-text-muted);
+        text-decoration: none;
+    }
+
+    .pagination-wrap a:hover {
+        color: var(--color-accent);
+        border-color: var(--color-accent);
+    }
+
+    .pagination-wrap .current {
+        background: var(--color-accent);
+        color: #fff;
+        border-color: var(--color-accent);
+    }
+
+    .pagination-wrap .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    @media (max-width: 640px) {
+        .modal-body .form-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card" id="accounts-app" data-auto-open-modals="{{ auto_open_modals }}">
+    <div class="page-card-inner">
+      <div class="accounts-header">
+        <a class="accounts-back" href="{% url 'dashboard' %}">بازگشت به داشبورد</a>
+        <h1 class="page-title">
+          مدیریت حساب‌ها <span>مشتریان و مشاوران</span>
+        </h1>
+        <p class="page-subtitle">ثبت، ویرایش و حذف اطلاعات مشتری‌ها و مشاوران دفتر شما.</p>
+      </div>
+      {% if messages %}
+        <ul class="message-list">
+          {% for message in messages %}
+            <li class="message-item{% if message.tags %} {{ message.tags }}{% endif %}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <nav class="accounts-tabs" role="tablist">
+        <a class="accounts-tab {% if current_tab == 'clients' %}is-active{% endif %}"
+           href="{% url 'manage-accounts' %}?tab=clients">مشتریان</a>
+        <a class="accounts-tab {% if current_tab == 'consultants' %}is-active{% endif %}"
+           href="{% url 'manage-accounts' %}?tab=consultants">مشاوران</a>
+      </nav>
+      <div id="tab-clients"
+           class="accounts-tab-content {% if current_tab == 'clients' %}is-active{% endif %}">
+        <div class="tab-toolbar">
+          <h2>لیست مشتریان</h2>
+          <button type="button"
+                  class="btn-add"
+                  data-modal-open="modal-client"
+                  aria-label="ثبت مشتری جدید">+ ثبت مشتری جدید</button>
+        </div>
+        {% if clients_page.object_list %}
+          <table class="accounts-table">
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>کد ملی</th>
+                <th>شماره تماس</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for client in clients_page %}
+                <tr>
+                  <td>{{ client.name }}</td>
+                  <td>{{ client.national_id|default:"—" }}</td>
+                  <td>{{ client.phone|default:"—" }}</td>
+                  <td>
+                    <div class="accounts-actions">
+                      <a class="btn-small" href="{% url 'edit-client' client.id %}">ویرایش</a>
+                      <form method="post"
+                            action="{% url 'delete-client' client.id %}"
+                            onsubmit="return confirm('حذف مشتری انجام شود؟');"
+                            style="display:inline">
+                        {% csrf_token %}
+                        <button class="btn-small btn-danger" type="submit">حذف</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if clients_page.has_other_pages %}
+            <div class="pagination-wrap">
+              {% if clients_page.has_previous %}
+                <a href="?tab=clients&client_page=1">«</a>
+                <a href="?tab=clients&client_page={{ clients_page.previous_page_number }}">‹</a>
+              {% endif %}
+              {% for num in clients_page.paginator.page_range %}
+                {% if num == clients_page.number %}
+                  <span class="current">{{ num }}</span>
+                {% elif num > clients_page.number|add:'-3' and num < clients_page.number|add:'3' %}
+                  <a href="?tab=clients&client_page={{ num }}">{{ num }}</a>
+                {% endif %}
+              {% endfor %}
+              {% if clients_page.has_next %}
+                <a href="?tab=clients&client_page={{ clients_page.next_page_number }}">›</a>
+                <a href="?tab=clients&client_page={{ clients_page.paginator.num_pages }}">»</a>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="empty-state">هیچ مشتری برای این دفتر ثبت نشده است.</div>
+        {% endif %}
+      </div>
+      <div id="tab-consultants"
+           class="accounts-tab-content {% if current_tab == 'consultants' %}is-active{% endif %}">
+        <div class="tab-toolbar">
+          <h2>لیست مشاوران</h2>
+          <button type="button"
+                  class="btn-add"
+                  data-modal-open="modal-consultant"
+                  aria-label="ثبت مشاور جدید">+ ثبت مشاور جدید</button>
+        </div>
+        {% if consultants_page.object_list %}
+          <table class="accounts-table">
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>شماره تماس</th>
+                <th>حساب مرتبط</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for consultant in consultants_page %}
+                <tr>
+                  <td>{{ consultant.name }}</td>
+                  <td>{{ consultant.phone|default:"—" }}</td>
+                  <td>{{ consultant.account|default:"—" }}</td>
+                  <td>
+                    <div class="accounts-actions">
+                      <a class="btn-small" href="{% url 'edit-consultant' consultant.id %}">ویرایش</a>
+                      <form method="post"
+                            action="{% url 'delete-consultant' consultant.id %}"
+                            onsubmit="return confirm('حذف مشاور انجام شود؟');"
+                            style="display:inline">
+                        {% csrf_token %}
+                        <button class="btn-small btn-danger" type="submit">حذف</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if consultants_page.has_other_pages %}
+            <div class="pagination-wrap">
+              {% if consultants_page.has_previous %}
+                <a href="?tab=consultants&consultant_page=1">«</a>
+                <a href="?tab=consultants&consultant_page={{ consultants_page.previous_page_number }}">‹</a>
+              {% endif %}
+              {% for num in consultants_page.paginator.page_range %}
+                {% if num == consultants_page.number %}
+                  <span class="current">{{ num }}</span>
+                {% elif num > consultants_page.number|add:'-3' and num < consultants_page.number|add:'3' %}
+                  <a href="?tab=consultants&consultant_page={{ num }}">{{ num }}</a>
+                {% endif %}
+              {% endfor %}
+              {% if consultants_page.has_next %}
+                <a href="?tab=consultants&consultant_page={{ consultants_page.next_page_number }}">›</a>
+                <a href="?tab=consultants&consultant_page={{ consultants_page.paginator.num_pages }}">»</a>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="empty-state">هیچ مشاوری برای این دفتر ثبت نشده است.</div>
+        {% endif %}
+      </div>
+      <!-- Modal: ثبت مشتری -->
+      <div id="modal-client"
+           class="modal-overlay"
+           role="dialog"
+           aria-labelledby="modal-client-title"
+           aria-modal="true"
+           aria-hidden="true">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h3 id="modal-client-title">ثبت مشتری جدید</h3>
+            <button type="button"
+                    class="modal-close"
+                    data-modal-close="modal-client"
+                    aria-label="بستن">×</button>
+          </div>
+          <div class="modal-body">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="create_client" value="1">
+              <div class="form-grid">
+                {% for field in client_form %}
+                  <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    <div class="field">{{ field }}</div>
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              {{ client_form.non_field_errors }}
+              <button class="btn-primary" type="submit">ثبت مشتری</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <!-- Modal: ثبت مشاور -->
+      <div id="modal-consultant"
+           class="modal-overlay"
+           role="dialog"
+           aria-labelledby="modal-consultant-title"
+           aria-modal="true"
+           aria-hidden="true">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h3 id="modal-consultant-title">ثبت مشاور جدید</h3>
+            <button type="button"
+                    class="modal-close"
+                    data-modal-close="modal-consultant"
+                    aria-label="بستن">×</button>
+          </div>
+          <div class="modal-body">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="create_consultant" value="1">
+              <div class="form-grid">
+                {% for field in consultant_form %}
+                  <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    <div class="field">{{ field }}</div>
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              {{ consultant_form.non_field_errors }}
+              <button class="btn-primary" type="submit">ثبت مشاور</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function() {
+      function openModal(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.classList.add('is-open');
+          el.setAttribute('aria-hidden', 'false');
+        }
+      }
+      function closeModal(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.classList.remove('is-open');
+          el.setAttribute('aria-hidden', 'true');
+        }
+      }
+      document.querySelectorAll('[data-modal-open]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          openModal(this.getAttribute('data-modal-open'));
+        });
+      });
+      document.querySelectorAll('[data-modal-close]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          closeModal(this.getAttribute('data-modal-close'));
+        });
+      });
+      document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+          if (e.target === this) closeModal(this.id);
+        });
+      });
+
+      var app = document.getElementById('accounts-app');
+      if (app && app.dataset.autoOpenModals) {
+        app.dataset.autoOpenModals.trim().split(/\s+/).forEach(openModal);
+      }
+    })();
+  </script>
+{% endblock %}

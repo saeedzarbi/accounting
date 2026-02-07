@@ -1,0 +1,16 @@
+/* static/css/editor_styles.css */
+@font-face {
+    font-family: 'Vazir';
+    src: url('../fonts/Vazir.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'BNazanin';
+    src: url('../fonts/BNazanin.ttf') format('truetype');
+}
+
+body {
+    font-family: 'Vazir', Tahoma, sans-serif;
+    direction: rtl;
+    text-align: right;
+}

@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}اطلاعات ملک{% endblock %}
+{% block body_class %}deal-property-form-page{% endblock %}
+{% block extra_head %}
+  <style>
+    .property-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .property-card {
+        border-radius: 18px;
+        padding: 14px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+        background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+        box-shadow: var(--shadow-soft);
+        margin-bottom: 14px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 900;
+        color: var(--color-text);
+        margin: 0 0 10px;
+        font-family: var(--font-title);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .form-grid.compact {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .form-grid.one-col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .form-group label {
+        font-size: 14px;
+        color: var(--color-text);
+        display: inline-block;
+        margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 15px;
+        padding: 10px 12px;
+        border-radius: 12px;
+    }
+
+    .deed-section .form-group input,
+    .deed-section .form-group select,
+    .deed-section .form-group textarea {
+        font-size: 14px;
+        padding: 8px 10px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+
+    .helper-text {
+        font-size: 12px;
+        color: var(--color-text-muted);
+    }
+
+    .choice-inline {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .choice-inline label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: var(--color-text);
+        cursor: pointer;
+    }
+
+    .choice-inline input[type="radio"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--color-accent);
+    }
+
+    @media (max-width: 900px) {
+        .property-grid,
+        .form-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <section class="page-card">
+    <div class="page-card-inner">
+      <h1 class="page-title">
+        اطلاعات ملک
+        <span>مرحله ۲ از ۴ (اختیاری)</span>
+      </h1>
+      <p class="page-subtitle">معامله {{ deal.id }} — برای ادامه، می‌توانید اطلاعات ملک را ثبت یا خالی بگذارید.</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="property-card">
+          <h2 class="section-title">مشخصات ثبتی و کلی</h2>
+          <div class="form-grid compact">
+            <div class="form-group">
+              <label for="{{ form.property_dang.id_for_label }}">{{ form.property_dang.label }}</label>
+              {{ form.property_dang }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.property_title.id_for_label }}">{{ form.property_title.label }}</label>
+              {{ form.property_title }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.registry_sub_number.id_for_label }}">{{ form.registry_sub_number.label }}</label>
+              {{ form.registry_sub_number }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.registry_main_number.id_for_label }}">{{ form.registry_main_number.label }}</label>
+              {{ form.registry_main_number }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.registry_piece_number.id_for_label }}">{{ form.registry_piece_number.label }}</label>
+              {{ form.registry_piece_number }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.registry_section.id_for_label }}">{{ form.registry_section.label }}</label>
+              {{ form.registry_section }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.registry_area.id_for_label }}">{{ form.registry_area.label }}</label>
+              {{ form.registry_area }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.area_m2.id_for_label }}">{{ form.area_m2.label }}</label>
+              {{ form.area_m2 }}
+            </div>
+          </div>
+        </div>
+        <div class="property-card deed-section">
+          <h2 class="section-title">مشخصات سند مالکیت</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="{{ form.deed_serial.id_for_label }}">{{ form.deed_serial.label }}</label>
+              {{ form.deed_serial }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.deed_page.id_for_label }}">{{ form.deed_page.label }}</label>
+              {{ form.deed_page }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.deed_book.id_for_label }}">{{ form.deed_book.label }}</label>
+              {{ form.deed_book }}
+            </div>
+          </div>
+        </div>
+        <div class="property-card">
+          <h2 class="section-title">پارکینگ و انباری</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="{{ form.parking_dang.id_for_label }}">{{ form.parking_dang.label }}</label>
+              {{ form.parking_dang }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.parking_number.id_for_label }}">{{ form.parking_number.label }}</label>
+              {{ form.parking_number }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.parking_area_m2.id_for_label }}">{{ form.parking_area_m2.label }}</label>
+              {{ form.parking_area_m2 }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.parking_deed_serial.id_for_label }}">{{ form.parking_deed_serial.label }}</label>
+              {{ form.parking_deed_serial }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.storage_dang.id_for_label }}">{{ form.storage_dang.label }}</label>
+              {{ form.storage_dang }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.storage_number.id_for_label }}">{{ form.storage_number.label }}</label>
+              {{ form.storage_number }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.storage_area_m2.id_for_label }}">{{ form.storage_area_m2.label }}</label>
+              {{ form.storage_area_m2 }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.storage_deed_serial.id_for_label }}">{{ form.storage_deed_serial.label }}</label>
+              {{ form.storage_deed_serial }}
+            </div>
+          </div>
+        </div>
+        <div class="property-card">
+          <h2 class="section-title">انشعابات و تلفن</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="{{ form.water_share.id_for_label }}">{{ form.water_share.label }}</label>
+              {{ form.water_share }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.electricity_share.id_for_label }}">{{ form.electricity_share.label }}</label>
+              {{ form.electricity_share }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.gas_share.id_for_label }}">{{ form.gas_share.label }}</label>
+              {{ form.gas_share }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.phone_lines_count.id_for_label }}">{{ form.phone_lines_count.label }}</label>
+              {{ form.phone_lines_count }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.phone_numbers.id_for_label }}">{{ form.phone_numbers.label }}</label>
+              {{ form.phone_numbers }}
+              <div class="helper-text">در صورت چند خط، با ویرگول جدا کنید.</div>
+            </div>
+          </div>
+        </div>
+        <div class="property-card">
+          <h2 class="section-title">آدرس</h2>
+          <div class="form-grid one-col">
+            <div class="form-group">
+              <label for="{{ form.property_address.id_for_label }}">{{ form.property_address.label }}</label>
+              {{ form.property_address }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.postal_code.id_for_label }}">{{ form.postal_code.label }}</label>
+              {{ form.postal_code }}
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" type="submit">ذخیره اطلاعات ملک و ادامه</button>
+          <a class="btn-ghost"
+             href="{% url 'generate_contract' deal_id=deal.id %}"
+             style="width:auto">ادامه بدون ثبت</a>
+          <a class="btn-ghost"
+             href="{% url 'edit_deal' deal_id=deal.id %}"
+             style="width:auto">بازگشت به اطلاعات مبایعه</a>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

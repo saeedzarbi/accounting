@@ -1,0 +1,782 @@
+{% extends "base.html" %}
+{% block title %}ثبت مبایعه جدید{% endblock %}
+{% block body_class %}contract-create-deal-page{% endblock %}
+{% block extra_head %}
+  <style>
+    .create-deal-shell {
+        width: 100%;
+    }
+
+    .create-deal-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(240px, 0.42fr);
+        gap: 18px;
+        width: 100%;
+        margin-top: 14px;
+    }
+
+    .card-surface {
+        border-radius: 20px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+        background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+        box-shadow: var(--shadow-soft);
+        padding: 16px 14px;
+    }
+
+    .card-surface h2 {
+        margin: 0 0 10px;
+        font-size: 17px;
+        font-family: var(--font-title);
+        color: var(--color-text);
+    }
+
+    .form-rows {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px 16px;
+    }
+
+    .form-rows.one {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .person-box {
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+        background: color-mix(in srgb, var(--color-surface-alt) 70%, transparent);
+        padding: 12px 12px 10px;
+    }
+
+    .person-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .person-header label {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--color-text);
+        font-family: var(--font-title);
+    }
+
+    .add-btn {
+        width: auto;
+        padding: 9px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,0.55);
+        background: linear-gradient(135deg, var(--color-accent), var(--color-accent-soft));
+        color: #e5f2ff;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+        box-shadow: 0 10px 25px rgba(37,99,235,0.35);
+    }
+
+    .add-btn:hover {
+        filter: brightness(1.05);
+    }
+
+    .person-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 10px;
+    }
+
+    .person-item {
+        border-radius: 14px;
+        padding: 10px 10px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+        background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: transform .1s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .person-item:hover {
+        transform: translateY(-1px);
+        border-color: rgba(96,165,250,0.75);
+        background: color-mix(in srgb, var(--color-surface-alt) 80%, transparent);
+    }
+
+    .person-item input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-accent);
+        margin: 0;
+        flex: 0 0 auto;
+    }
+
+    .person-info strong {
+        display: block;
+        color: var(--color-text);
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.6;
+    }
+
+    .person-info small {
+        color: var(--color-text-muted);
+        font-size: 13px;
+    }
+
+    .client-search-wrap {
+        position: relative;
+        margin-bottom: 10px;
+    }
+    .client-search-wrap input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font-size: 15px;
+    }
+    .client-search-wrap input::placeholder {
+        color: var(--color-text-muted);
+    }
+    .client-search-results {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        margin-top: 4px;
+        max-height: 220px;
+        overflow-y: auto;
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+        background: color-mix(in srgb, var(--color-surface) 98%, transparent);
+        box-shadow: var(--shadow-xl);
+        z-index: 10;
+        display: none;
+    }
+    .client-search-results.visible {
+        display: block;
+    }
+    .client-search-results .result-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+        align-items: center;
+        transition: background .15s ease;
+    }
+    .client-search-results .result-item:last-child {
+        border-bottom: none;
+    }
+    .client-search-results .result-item:hover {
+        background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    }
+    .client-search-results .result-item .result-name {
+        font-weight: 700;
+        color: var(--color-text);
+        font-size: 15px;
+    }
+    .client-search-results .result-item .result-meta {
+        font-size: 13px;
+        color: var(--color-text-muted);
+    }
+    .client-search-results .result-item .result-meta span {
+        margin-left: 8px;
+    }
+    .client-search-results .empty-msg {
+        padding: 14px;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 12px;
+    }
+    .selected-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .selected-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+        background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+        font-size: 14px;
+        color: var(--color-text);
+    }
+    .selected-chip .chip-name { font-weight: 700; }
+    .selected-chip .chip-meta { color: var(--color-text-muted); font-size: 13px; margin-right: 4px; }
+    .selected-chip .chip-remove {
+        width: 18px;
+        height: 18px;
+        border: none;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--color-border) 60%, transparent);
+        color: var(--color-text);
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .selected-chip .chip-remove:hover {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+
+    .submit-row {
+        margin-top: 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .submit-row .btn-primary {
+        width: auto;
+        min-width: 220px;
+    }
+
+    .side-info {
+        position: sticky;
+        top: 18px;
+        height: fit-content;
+    }
+
+    .side-kv {
+        display: grid;
+        grid-template-columns: 110px minmax(0, 1fr);
+        gap: 8px 10px;
+        font-size: 14px;
+        line-height: 1.8;
+        color: var(--color-text-muted);
+    }
+
+    .side-kv b {
+        color: var(--color-text);
+        font-weight: 800;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 9999;
+    }
+
+    html[data-theme="light"] .modal-overlay {
+        background: rgba(15, 23, 42, 0.42);
+    }
+
+    .modal {
+        width: 100%;
+        max-width: 520px;
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, 0.40);
+        background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+        box-shadow: var(--shadow-xl);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+        background: radial-gradient(circle at 0 0, rgba(37,99,235,0.16), transparent 45%);
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 18px;
+        font-family: var(--font-title);
+        color: var(--color-text);
+    }
+
+    .modal-body {
+        padding: 14px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .modal-actions .btn-primary {
+        width: auto;
+        min-width: 160px;
+    }
+
+    .modal-actions .btn-ghost {
+        width: auto;
+    }
+
+    @media (max-width: 980px) {
+        .create-deal-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .side-info {
+            position: static;
+        }
+    }
+
+    @media (max-width: 680px) {
+        .form-rows {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .person-list {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .submit-row .btn-primary {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <section class="page-card create-deal-shell">
+    <div class="page-card-inner">
+      <h1 class="page-title">
+        {% if deal %}
+          ویرایش مبایعه
+        {% else %}
+          ثبت مبایعه جدید
+        {% endif %}
+        <span>شروع فرایند قرارداد (انتخاب قالب و ویرایش)</span>
+      </h1>
+      <p class="page-subtitle">
+        در این مرحله فقط اطلاعات اولیه مبایعه و طرفین (خریدار/فروشنده) ثبت می‌شود و سپس وارد مرحله انتخاب قالب قرارداد خواهید شد.
+      </p>
+      <div class="create-deal-grid">
+        <div class="card-surface">
+          <h2>اطلاعات مبایعه</h2>
+          <form id="create-deal-form"
+                method="post"
+                novalidate
+                {% if deal %} action="{% url 'edit_deal' deal_id=deal.id %}"{% endif %}>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="form-errors mb-3" role="alert">
+                {% for err in form.non_field_errors %}
+                  <p class="text-danger" style="margin:0 0 6px; font-size:14px;">{{ err }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+            <div class="form-rows">
+              <div class="form-group">
+                <label class="form-label">عنوان مبایعه</label>
+                <div class="field">{{ form.title }}</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">نوع معامله</label>
+                <div class="field">{{ form.type }}</div>
+              </div>
+            </div>
+            <div class="form-group mt-4">
+              <div class="person-box">
+                <div class="person-header">
+                  <label id="label-sellers">فروشندگان</label>
+                  <button type="button" class="add-btn" onclick="openModal('seller')">+ افزودن شخص جدید</button>
+                </div>
+                <p class="form-hint"
+                   style="margin:0 0 8px;
+                          font-size:14px;
+                          color:var(--color-text-muted)">جستجو با نام، کد ملی یا شماره موبایل</p>
+                <div class="client-search-wrap">
+                  <input type="text"
+                         id="search-sellers"
+                         placeholder="جستجو در مشتریان..."
+                         autocomplete="off"
+                         data-role="sellers">
+                  <div class="client-search-results"
+                       id="results-sellers"
+                       data-role="sellers"></div>
+                </div>
+                <div class="selected-list" id="selected-sellers"></div>
+                <div id="hidden-sellers-container"></div>
+              </div>
+            </div>
+            <div class="form-group mt-4">
+              <div class="person-box">
+                <div class="person-header">
+                  <label id="label-buyers">خریداران</label>
+                  <button type="button" class="add-btn" onclick="openModal('buyer')">+ افزودن شخص جدید</button>
+                </div>
+                <p class="form-hint"
+                   style="margin:0 0 8px;
+                          font-size:14px;
+                          color:var(--color-text-muted)">جستجو با نام، کد ملی یا شماره موبایل</p>
+                <div class="client-search-wrap">
+                  <input type="text"
+                         id="search-buyers"
+                         placeholder="جستجو در مشتریان..."
+                         autocomplete="off"
+                         data-role="buyers">
+                  <div class="client-search-results" id="results-buyers" data-role="buyers"></div>
+                </div>
+                <div class="selected-list" id="selected-buyers"></div>
+                <div id="hidden-buyers-container"></div>
+              </div>
+            </div>
+            <div class="submit-row">
+              <button type="submit" class="btn-primary">
+                {% if deal %}
+                  ذخیره و ادامه
+                {% else %}
+                  ثبت و ادامه
+                {% endif %}
+                (انتخاب قالب قرارداد)
+              </button>
+              <a class="btn-ghost" href="{% url 'dashboard' %}" style="width:auto;">برگشت به داشبورد</a>
+            </div>
+          </form>
+        </div>
+        <aside class="card-surface side-info">
+          <h2>راهنما</h2>
+          <div class="side-kv">
+            <b>مرحله ۱</b><span>ثبت عنوان و نوع معامله</span>
+            <b>مرحله ۲</b><span id="step2-desc">انتخاب فروشنده/خریدار (امکان افزودن سریع)</span>
+            <b>مرحله ۳</b><span>انتخاب قالب قرارداد</span>
+            <b>مرحله ۴</b><span>ویرایش متن و نهایی‌سازی</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+  <!-- Modal: افزودن شخص جدید -->
+  <div class="modal-overlay" id="clientModal" aria-hidden="true">
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="clientModalTitle"
+         onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title" id="clientModalTitle">افزودن شخص جدید</h3>
+        <button type="button"
+                class="btn-ghost"
+                onclick="closeModal()"
+                style="width:auto">بستن</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid one-col">
+          <div class="form-group">
+            <label class="form-label">نام مشتری</label>
+            <div class="field">
+              <input type="text" id="clientName" placeholder="مثلاً علی محمدی">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">نام پدر</label>
+            <div class="field">
+              <input type="text" id="clientFatherName" placeholder="مثلاً محمد">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">کد ملی</label>
+            <div class="field">
+              <input type="text"
+                     id="clientNationalId"
+                     placeholder="۱۰ رقم"
+                     maxlength="10"
+                     pattern="[0-9]*"
+                     inputmode="numeric">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">تاریخ تولد (شمسی)</label>
+            <div class="field">
+              <input type="text" id="clientBirthDate" placeholder="مثلاً 1370/05/15">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">صادره از شهر</label>
+            <div class="field">
+              <input type="text" id="clientCityOfIssuance" placeholder="مثلاً تهران">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">شماره تماس</label>
+            <div class="field">
+              <input type="text" id="clientPhone" placeholder="09xxxxxxxxx">
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" onclick="addClient()">ذخیره</button>
+          <button type="button" class="btn-ghost" onclick="closeModal()">انصراف</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  {% if deal %}
+    {{ initial_sellers|json_script:"initial-sellers-data" }}
+    {{ initial_buyers|json_script:"initial-buyers-data" }}
+  {% endif %}
+  <script>
+    const SEARCH_URL = "{% url 'client_search_api' %}";
+    const QUICK_CREATE_URL = "{% url 'quick_create_client' %}";
+    let currentTarget = null;
+    let searchDebounce = null;
+    const DEBOUNCE_MS = 280;
+
+    function updateLabelsByDealType() {
+        const sel = document.querySelector('form select[name="type"]');
+        const lSellers = document.getElementById('label-sellers');
+        const lBuyers = document.getElementById('label-buyers');
+        const step2 = document.getElementById('step2-desc');
+        if (!sel || !lSellers || !lBuyers || !step2) return;
+        const opt = sel.options[sel.selectedIndex];
+        const name = (opt && opt.text) ? opt.text.trim() : '';
+        const isRent = name.indexOf('اجاره') !== -1;
+        if (isRent) {
+            lSellers.textContent = 'موجران';
+            lBuyers.textContent = 'مستأجران';
+            step2.textContent = 'انتخاب موجر/مستأجر (جستجو یا افزودن سریع)';
+        } else {
+            lSellers.textContent = 'فروشندگان';
+            lBuyers.textContent = 'خریداران';
+            step2.textContent = 'انتخاب فروشنده/خریدار (جستجو یا افزودن سریع)';
+        }
+    }
+
+    function getSelectedIds(role) {
+        const container = document.getElementById('hidden-' + role + '-container');
+        if (!container) return [];
+        return Array.from(container.querySelectorAll('input[name="' + role + '"]')).map(i => i.value);
+    }
+
+    function getOtherRole(role) {
+        return role === 'sellers' ? 'buyers' : 'sellers';
+    }
+
+    function addClientToRole(role, client) {
+        const ids = getSelectedIds(role);
+        if (ids.indexOf(String(client.id)) !== -1) return;
+        var otherIds = getSelectedIds(getOtherRole(role));
+        if (otherIds.indexOf(String(client.id)) !== -1) {
+            alert('این مشتری در طرف مقابل (خریدار/فروشنده) انتخاب شده است. یک شخص نمی\u200cتواند هم\u200cزمان فروشنده و خریدار باشد.');
+            return;
+        }
+        const listEl = document.getElementById('selected-' + role);
+        const container = document.getElementById('hidden-' + role + '-container');
+        if (!listEl || !container) return;
+        const meta = [client.national_id ? 'کد ملی: ' + client.national_id : '', client.phone || ''].filter(Boolean).join(' · ') || '—';
+        const chip = document.createElement('span');
+        chip.className = 'selected-chip';
+        chip.dataset.id = client.id;
+        chip.innerHTML = '<span class="chip-name">' + escapeHtml(client.name) + '</span> <span class="chip-meta">' + escapeHtml(meta) + '</span> <button type="button" class="chip-remove" aria-label="حذف">×</button>';
+        chip.querySelector('.chip-remove').addEventListener('click', function() { removeClientFromRole(role, client.id); });
+        listEl.appendChild(chip);
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = role;
+        inp.value = client.id;
+        inp.dataset.id = client.id;
+        container.appendChild(inp);
+    }
+
+    function removeClientFromRole(role, id) {
+        const listEl = document.getElementById('selected-' + role);
+        const container = document.getElementById('hidden-' + role + '-container');
+        if (!listEl || !container) return;
+        const chip = listEl.querySelector('.selected-chip[data-id="' + id + '"]');
+        const inp = container.querySelector('input[name="' + role + '"][data-id="' + id + '"]');
+        if (chip) chip.remove();
+        if (inp) inp.remove();
+    }
+
+    function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
+    function showSearchResults(role, clients) {
+        const box = document.getElementById('results-' + role);
+        if (!box) return;
+        const ids = getSelectedIds(role);
+        var otherIds = getSelectedIds(getOtherRole(role));
+        box.innerHTML = '';
+        if (!clients.length) {
+            box.innerHTML = '<div class="empty-msg">مشتریی یافت نشد. عبارت دیگری جستجو کنید یا «افزودن سریع» استفاده کنید.</div>';
+        } else {
+            clients.forEach(function(c) {
+                if (ids.indexOf(String(c.id)) !== -1) return;
+                if (otherIds.indexOf(String(c.id)) !== -1) return;
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.tabIndex = 0;
+                item.setAttribute('role', 'button');
+                const meta = [c.national_id ? 'کد ملی: ' + c.national_id : '', c.phone || ''].filter(Boolean).join(' · ') || '—';
+                item.innerHTML = '<div><span class="result-name">' + escapeHtml(c.name) + '</span><div class="result-meta">' + escapeHtml(meta) + '</div></div>';
+                item.addEventListener('click', function() {
+                    addClientToRole(role, c);
+                    box.classList.remove('visible');
+                    document.getElementById('search-' + role).value = '';
+                });
+                box.appendChild(item);
+            });
+        }
+        box.classList.add('visible');
+    }
+
+    function doSearch(role, q) {
+        const url = (q && q.length >= 1) ? SEARCH_URL + '?q=' + encodeURIComponent(q) : SEARCH_URL;
+        fetch(url, { method: 'GET', credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                showSearchResults(role, data.clients || []);
+            })
+            .catch(function() {
+                showSearchResults(role, []);
+            });
+    }
+
+    function openModal(type) {
+        currentTarget = type;
+        const modal = document.getElementById('clientModal');
+        if (!modal) return;
+        // پاک کردن فیلدها برای ثبت شخص جدید
+        ['clientName','clientFatherName','clientNationalId','clientBirthDate','clientCityOfIssuance','clientPhone'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        modal.style.display = 'flex';
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('clientModal');
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+    }
+
+    function addClient() {
+        const name = document.getElementById('clientName').value.trim();
+        const phone = document.getElementById('clientPhone').value.trim();
+        const fatherName = document.getElementById('clientFatherName').value.trim();
+        const nationalId = document.getElementById('clientNationalId').value.trim();
+        const birthDate = document.getElementById('clientBirthDate').value.trim();
+        const cityOfIssuance = document.getElementById('clientCityOfIssuance').value.trim();
+
+        if (!name) {
+            alert('نام مشتری الزامی است');
+            return;
+        }
+
+        const params = { 'name': name, 'phone': phone };
+        if (fatherName) params['father_name'] = fatherName;
+        if (nationalId) params['national_id'] = nationalId;
+        if (birthDate) params['birth_date'] = birthDate;
+        if (cityOfIssuance) params['city_of_issuance'] = cityOfIssuance;
+
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch(QUICK_CREATE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrftoken },
+            body: new URLSearchParams(params)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) { alert(data.error); return; }
+            const role = currentTarget === 'buyer' ? 'buyers' : 'sellers';
+            addClientToRole(role, { id: data.id, name: data.name, national_id: data.national_id || '', phone: data.phone || '' });
+            closeModal();
+            ['clientName','clientPhone','clientFatherName','clientNationalId','clientBirthDate','clientCityOfIssuance'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        })
+        .catch(function(err) { console.error(err); alert('خطا در ارتباط با سرور'); });
+    }
+
+    document.getElementById('clientModal')?.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'clientModal') closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    ['sellers', 'buyers'].forEach(function(role) {
+        const input = document.getElementById('search-' + role);
+        const results = document.getElementById('results-' + role);
+        if (!input || !results) return;
+        input.addEventListener('input', function() {
+            clearTimeout(searchDebounce);
+            const q = input.value.trim();
+            if (!q) { results.classList.remove('visible'); return; }
+            searchDebounce = setTimeout(function() { doSearch(role, q); }, DEBOUNCE_MS);
+        });
+        input.addEventListener('focus', function() {
+            if (input.value.trim()) {
+                if (results.children.length) results.classList.add('visible');
+                else doSearch(role, input.value.trim());
+            } else {
+                doSearch(role, '');
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !results.contains(e.target)) results.classList.remove('visible');
+        });
+    });
+
+    (function() {
+        const sel = document.querySelector('form select[name="type"]');
+        if (sel) {
+            sel.addEventListener('change', updateLabelsByDealType);
+            updateLabelsByDealType();
+        }
+    })();
+
+    document.getElementById('create-deal-form').addEventListener('submit', function(e) {
+        const sellerIds = getSelectedIds('sellers');
+        const buyerIds = getSelectedIds('buyers');
+        if (!sellerIds.length || !buyerIds.length) {
+            e.preventDefault();
+            var msg = (!sellerIds.length && !buyerIds.length)
+                ? 'انتخاب حداقل یک فروشنده/موجر و حداقل یک خریدار/مستأجر الزامی است.'
+                : (!sellerIds.length ? 'انتخاب حداقل یک فروشنده/موجر الزامی است.' : 'انتخاب حداقل یک خریدار/مستأجر الزامی است.');
+            alert(msg);
+            return false;
+        }
+    });
+
+    (function fillInitialParties() {
+        var sellersEl = document.getElementById('initial-sellers-data');
+        var buyersEl = document.getElementById('initial-buyers-data');
+        if (!sellersEl || !buyersEl) return;
+        try {
+            var initialSellers = JSON.parse(sellersEl.textContent);
+            var initialBuyers = JSON.parse(buyersEl.textContent);
+            initialSellers.forEach(function(c) { addClientToRole('sellers', c); });
+            initialBuyers.forEach(function(c) { addClientToRole('buyers', c); });
+        } catch (e) { console.warn('fillInitialParties:', e); }
+    })();
+  </script>
+{% endblock %}

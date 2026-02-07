@@ -1,0 +1,60 @@
+from django.urls import include, path
+from transactions.views import (
+    ApproveDealView,
+    ClientListByOfficeView,
+    CommissionSplitBulkView,
+    ConsultantListByOfficeView,
+    ContractListView,
+    CreateCommissionSplitView,
+    CreateDealView,
+    DealClientCommissionBulkView,
+    DealCreatePageView,
+    DealDetailView,
+    # DealsListPageView,
+    DealsListView,
+    DeleteDealView,
+    RejectDealView,
+    UpdateCommissionSplitView,
+    UpdateDealView,
+)
+
+urlpatterns = [
+    path("create-view/", DealCreatePageView.as_view(), name="deal-create-view"),
+    # path("list-view/", DealsListPageView.as_view(), name="deals-list-view"),
+    path("list/", DealsListView.as_view(), name="deals-list"),
+    path("contracts-list/", ContractListView.as_view(), name="contracts-list"),
+    path("list/<int:id>/", DealDetailView.as_view(), name="deal-detail"),
+    path("consultant/", ConsultantListByOfficeView.as_view(), name="consultant-list"),
+    path("clients/", ClientListByOfficeView.as_view(), name="client-list"),
+    path("", CreateDealView.as_view(), name="create_deal"),
+    path("<int:deal_id>/", UpdateDealView.as_view(), name="update_deal"),
+    path("<int:deal_id>/delete/", DeleteDealView.as_view(), name="delete_deal"),
+    path(
+        "<int:deal_id>/client-commissions/",
+        DealClientCommissionBulkView.as_view(),
+        name="deal-client-commissions-bulk",
+    ),
+    path(
+        "client-commissions/<int:deal_id>/",
+        DealClientCommissionBulkView.as_view(),
+        name="deal-client-commissions-bulk-legacy",
+    ),
+    path(
+        "commission-splits/<int:deal_id>/",
+        CommissionSplitBulkView.as_view(),
+        name="deal-commission-splits-bulk",
+    ),
+    path(
+        "commission-split/",
+        CreateCommissionSplitView.as_view(),
+        name="create_commission_split",
+    ),
+    path(
+        "commission_splits/<int:commission_split_id>/",
+        UpdateCommissionSplitView.as_view(),
+        name="update-commission-split",
+    ),
+    path("<int:deal_id>/approve/", ApproveDealView.as_view(), name="approve_deal"),
+    path("<int:deal_id>/reject/", RejectDealView.as_view(), name="reject_deal"),
+    path("contract/", include("transactions.contract.urls")),
+]

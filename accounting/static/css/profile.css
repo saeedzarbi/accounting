@@ -1,0 +1,296 @@
+/* ===== صفحه پروفایل ===== */
+
+.profile-page .shell-content {
+    align-items: flex-start;
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+}
+
+.profile-wrapper {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+.profile-back-wrap {
+    margin-bottom: 1.25rem;
+}
+
+.profile-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.profile-back:hover {
+    color: var(--color-accent);
+}
+
+.profile-hero {
+    text-align: center;
+    padding: 2rem 1.5rem 1.75rem;
+    border-radius: 24px;
+    background: linear-gradient(165deg, rgba(56, 189, 248, 0.18) 0%, rgba(37, 99, 235, 0.12) 50%, transparent 100%);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.4), transparent);
+    opacity: 0.6;
+}
+
+.profile-avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #38bdf8, #1d4ed8);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.4);
+    margin-bottom: 1rem;
+}
+
+.profile-display-name {
+    font-family: var(--font-title);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.profile-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: var(--color-text-muted);
+}
+
+.profile-badge strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.profile-card {
+    border-radius: 20px;
+    padding: 1.5rem 1.5rem 1.25rem;
+    background: color-mix(in srgb, var(--color-surface) 75%, transparent);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    margin-bottom: 1.25rem;
+}
+
+.profile-card-title {
+    font-family: var(--font-title);
+    font-size: 1.05rem;
+    color: var(--color-text);
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.profile-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.profile-form .form-group:last-of-type {
+    margin-bottom: 0;
+}
+
+.profile-form .form-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+}
+
+.profile-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+    color: var(--color-text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-input:focus {
+    border-color: rgba(96, 165, 250, 0.7);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+.profile-input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+
+html[data-theme="light"] .profile-input {
+    background: rgba(255, 255, 255, 0.95);
+    color: #0f172a;
+}
+
+.profile-form .errorlist {
+    list-style: none;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    font-size: 0.8rem;
+    color: #f87171;
+}
+
+.profile-actions {
+    margin-top: 1.25rem;
+}
+
+.btn-profile {
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-profile-primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #e5f2ff;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+}
+
+.btn-profile-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5);
+}
+
+.btn-profile-secondary {
+    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+    color: var(--color-text);
+    border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.btn-profile-secondary:hover {
+    border-color: rgba(96, 165, 250, 0.5);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.profile-messages {
+    margin-bottom: 1rem;
+}
+
+.profile-messages .alert {
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    color: #86efac;
+}
+
+html[data-theme="light"] .profile-messages .alert {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #166534;
+}
+
+.profile-password-toggle {
+    margin-top: 0.5rem;
+}
+
+.profile-password-toggle summary {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0.5rem 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-password-toggle summary::-webkit-details-marker {
+    display: none;
+}
+
+.profile-password-toggle summary::before {
+    content: "›";
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+}
+
+.profile-password-toggle[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.profile-password-toggle summary:hover {
+    color: var(--color-text);
+}
+
+.profile-password-content {
+    padding-top: 0.5rem;
+}
+
+.profile-page .profile-form .helper-text {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 480px) {
+    .profile-wrapper {
+        max-width: 100%;
+    }
+
+    .profile-hero {
+        padding: 1.5rem 1rem 1.25rem;
+    }
+
+    .profile-avatar {
+        width: 72px;
+        height: 72px;
+        font-size: 1.6rem;
+    }
+
+    .profile-display-name {
+        font-size: 1.25rem;
+    }
+
+    .profile-card {
+        padding: 1.25rem 1rem;
+    }
+}

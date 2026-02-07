@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}داشبورد حسابداری بنگاه{% endblock %}
+{% block body_class %}dashboard-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+{% block content %}
+  <div class="dashboard-layout">
+    <section class="dashboard-main">
+      <div class="dashboard-main-inner">
+        <div class="dashboard-content">
+          <div class="deals-widget-header">
+            <div class="deals-widget-heading">
+              <h1 class="deals-widget-title">لیست معاملات</h1>
+            </div>
+            <div class="deals-widget-actions">
+              <a class="btn-ghost" href="{% url 'deal-create-view' %}">+ ثبت معامله جدید</a>
+              <a class="btn-ghost" href="{% url 'create_deal_view' %}">+ ثبت مبایعه (قرارداد)</a>
+              <div class="deals-count" id="deals-count">در حال بارگذاری...</div>
+            </div>
+          </div>
+          <div id="deals-container" class="cards-grid"></div>
+          <div id="deals-pagination" class="pagination"></div>
+        </div>
+      </div>
+    </section>
+    <aside class="dashboard-sidebar">
+      <div class="dashboard-profile">
+        <div class="dashboard-profile-top">
+          <div class="dashboard-profile-avatar">{{ request.user.first_name|default:request.user.username|slice:":1" }}</div>
+          <div class="dashboard-profile-info">
+            <p class="dashboard-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <p class="dashboard-profile-meta">بنگاه: {{ request.user.office.name|default:"بنگاه مشخص نشده" }}</p>
+            <span class="dashboard-profile-role">نقش: {{ request.user.role|default:"مشخص نشده" }}</span>
+          </div>
+        </div>
+        <div class="dashboard-profile-actions">
+          <a href="{% url 'profile' %}">اطلاعات کاربری</a>
+        </div>
+      </div>
+      <h2 class="sidebar-section-title">امکانات</h2>
+      <ul class="module-list">
+        <a class="module-item" href="{% url 'deal-create-view' %}">
+          <div>
+            <span>ثبت معامله جدید</span>
+            <br>
+            <small>ثبت معامله و اطلاعات مالی</small>
+          </div>
+        </a>
+        <a class="module-item" href="{% url 'create_deal_view' %}">
+          <div>
+            <span>ثبت مبایعه‌نامه</span>
+            <br>
+            <small>قرارداد، قالب و چاپ مبایعه‌نامه</small>
+          </div>
+        </a>
+        <a class="module-item" href="{% url 'manage-accounts' %}">
+          <div>
+            <span>مدیریت حساب‌ها</span>
+            <br>
+            <small>مشتریان و مشاوران دفتر</small>
+          </div>
+        </a>
+        <a class="module-item"
+           href="{% url 'finance:accounting-documents-list' %}">
+          <div>
+            <span>اسناد حسابداری</span>
+            <br>
+            <small>لیست و مدیریت اسناد حسابداری</small>
+          </div>
+        </a>
+      </ul>
+    </aside>
+  </div>
+  <div class="modal-overlay" id="dealModalOverlay" aria-hidden="true">
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="dealModalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="dealModalTitle">جزئیات معامله</h2>
+        <button type="button" class="modal-close" id="dealModalClose">بستن</button>
+      </div>
+      <div class="modal-body" id="dealModalBody">
+        <div class="loading">در حال دریافت جزئیات...</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.DASHBOARD_CONFIG = {
+      dealsApiUrl: "{% url 'deals-list' %}",
+      dealDetailUrlTemplate: "{% url 'deal-detail' id=0 %}",
+      deleteDealUrlTemplate: "{% url 'delete_deal' deal_id=0 %}",
+      editDealUrlTemplate: "{% url 'deal-create-view' %}?deal_id=",
+      approveDealUrlTemplate: "{% url 'approve_deal' deal_id=0 %}",
+      rejectDealUrlTemplate: "{% url 'reject_deal' deal_id=0 %}",
+      contractPdfUrlTemplate: "{% url 'contract_pdf' pk=0 %}",
+      generateContractUrlTemplate: "{% url 'generate_contract' deal_id=0 %}",
+      dealAccountsUrlTemplate: "{% url 'finance:deal-accounts' deal_id=0 %}",
+      isOfficeManager: {{ request.user.is_office_manager|yesno:"true,false" }}
+    };
+  </script>
+  <script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}
