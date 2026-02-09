@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}نمودار حساب‌ها — سامانه حسابداری املاک{% endblock %}
+{% block body_class %}chart-of-accounts-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    .chart-of-accounts-page .shell-content { align-items: flex-start; padding-top: 1.5rem; padding-bottom: 3rem; }
+    .chart-header { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .chart-back { font-size: 0.9rem; color: var(--color-text-muted); text-decoration: none; }
+    .chart-back:hover { color: var(--color-accent); }
+    .chart-title { margin: 0; font-size: 1.4rem; font-family: var(--font-title); }
+    .chart-subtitle { margin: 0.25rem 0 0; font-size: 14px; color: var(--color-text-muted); }
+    .chart-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .chart-filters select { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.35); background: var(--color-surface); color: var(--color-text); }
+    .chart-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .chart-table th, .chart-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+    .chart-table th { color: var(--color-text-muted); font-weight: 600; }
+    .chart-table .num { font-variant-numeric: tabular-nums; direction: ltr; }
+    .chart-table .ledger-link { color: var(--color-accent); text-decoration: none; }
+    .chart-table .ledger-link:hover { text-decoration: underline; }
+    .chart-table tr.child-row td:first-child { padding-right: 2rem; }
+    .pagination-wrap { margin-top: 1.25rem; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+    .pagination-wrap a, .pagination-wrap span { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; padding: 0 10px; border-radius: 10px; font-size: 13px; border: 1px solid rgba(148, 163, 184, 0.3); color: var(--color-text-muted); text-decoration: none; }
+    .pagination-wrap a:hover { color: var(--color-accent); border-color: var(--color-accent); }
+    .pagination-wrap .current { background: var(--color-accent); color: #fff; }
+    .empty-state { padding: 24px; color: var(--color-text-muted); text-align: center; border-radius: 16px; background: rgba(148, 163, 184, 0.06); }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <div class="chart-header">
+        <a class="chart-back" href="{% url 'finance:office-finance' %}">← بازگشت به صفحه مالی بنگاه</a>
+        <h1 class="chart-title">نمودار حساب‌ها</h1>
+        <p class="chart-subtitle">
+          لیست حساب‌ها با کد، نام، نوع و مانده. برای مشاهده گردش هر حساب روی لینک گردش حساب کلیک کنید.
+        </p>
+      </div>
+      <form method="get" class="chart-filters">
+        <label for="account_type">نوع حساب:</label>
+        <select name="account_type" id="account_type" onchange="this.form.submit()">
+          <option value="">همه</option>
+          {% for value, label in account_type_choices %}
+            <option value="{{ value }}"
+                    {% if account_type_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% if accounts_with_balance %}
+        <table class="chart-table">
+          <thead>
+            <tr>
+              <th>کد</th>
+              <th>نام حساب</th>
+              <th>نوع</th>
+              <th>مانده (ریال)</th>
+              <th>گردش حساب</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in accounts_with_balance %}
+              <tr class="{% if item.account.parent_id %}child-row{% endif %}">
+                <td>{{ item.account.code }}</td>
+                <td>{{ item.account.name }}</td>
+                <td>{{ item.account.get_account_type_display }}</td>
+                <td class="num">{{ item.balance|floatformat:0|intcomma }}</td>
+                <td>
+                  <a class="ledger-link"
+                     href="{% url 'finance:account-ledger' item.account.id %}">گردش حساب</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if page_obj.has_other_pages %}
+          <div class="pagination-wrap">
+            {% if page_obj.has_previous %}
+              <a href="?page={{ page_obj.previous_page_number }}{% if account_type_filter %}&account_type={{ account_type_filter }}{% endif %}">‹</a>
+            {% endif %}
+            <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}{% if account_type_filter %}&account_type={{ account_type_filter }}{% endif %}">›</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">حسابی یافت نشد.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

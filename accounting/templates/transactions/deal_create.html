@@ -722,13 +722,13 @@
             <div class="review-panel">
               <h3 class="section-heading">بررسی اطلاعات وارد شده</h3>
               <p class="helper-row">
-                در صورت نیاز می‌توانید با کلیک روی دکمه‌های زیر به هر مرحله برگردید و ویرایش کنید. پس از اطمینان، «ثبت نهایی» را بزنید تا وضعیت معامله به «در انتظار تایید مدیر» تغییر کند.
+                در صورت نیاز می‌توانید با کلیک روی دکمه‌های زیر به هر مرحله برگردید و ویرایش کنید. پس از اطمینان، «ثبت نهایی» را بزنید تا وضعیت معامله به «در انتظار تایید مشاور» تغییر کند.
               </p>
               <div id="review-content"></div>
               <div class="review-edit-buttons" id="review-edit-buttons"></div>
               <div class="inline-actions" style="margin-top:16px;">
                 <button class="btn-secondary" type="button" data-back>بازگشت</button>
-                <button class="btn-primary" type="button" id="step-5-submit">ثبت نهایی (وضعیت: در انتظار تایید)</button>
+                <button class="btn-primary" type="button" id="step-5-submit">ثبت نهایی (وضعیت: در انتظار تایید مشاور)</button>
               </div>
             </div>
           </div>
@@ -1599,10 +1599,10 @@
             return;
         }
         try {
-            await request(updateDealUrl(state.dealId), "PUT", { status: "pending" });
+            await request(updateDealUrl(state.dealId), "PUT", { status: "consultant_pending" });
             updateSummary();
-            showSuccess("ثبت نهایی انجام شد. وضعیت معامله اکنون «در انتظار تایید مدیر» است.");
-            document.getElementById("summary-status").textContent = "در انتظار تایید";
+            showSuccess("ثبت نهایی انجام شد. وضعیت معامله اکنون «در انتظار تایید مشاور» است.");
+            document.getElementById("summary-status").textContent = "در انتظار تایید مشاور";
             document.getElementById("summary-actions").innerHTML = `
                 <a class="btn-secondary" href="{% url 'dashboard' %}">داشبورد</a>
             `;

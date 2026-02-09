@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
+{% load finance_tags %}
 {% block title %}داشبورد حسابداری بنگاه{% endblock %}
 {% block body_class %}dashboard-page{% endblock %}
 {% block extra_head %}
@@ -12,13 +14,41 @@
         <div class="dashboard-content">
           <div class="deals-widget-header">
             <div class="deals-widget-heading">
-              <h1 class="deals-widget-title">لیست معاملات</h1>
+              <h1 class="deals-widget-title">
+                {% if is_consultant %}
+                  معاملات من
+                {% else %}
+                  لیست معاملات
+                {% endif %}
+              </h1>
             </div>
             <div class="deals-widget-actions">
-              <a class="btn-ghost" href="{% url 'deal-create-view' %}">+ ثبت معامله جدید</a>
-              <a class="btn-ghost" href="{% url 'create_deal_view' %}">+ ثبت مبایعه (قرارداد)</a>
+              {% if not is_consultant %}
+                <a class="btn-ghost" href="{% url 'deal-create-view' %}">+ ثبت معامله جدید</a>
+                <a class="btn-ghost" href="{% url 'create_deal_view' %}">+ ثبت مبایعه (قرارداد)</a>
+              {% endif %}
               <div class="deals-count" id="deals-count">در حال بارگذاری...</div>
             </div>
+          </div>
+          <div class="deals-filters" id="deals-filters">
+            <label class="deals-filter-label" for="deals-search-input">جستجو:</label>
+            <input type="text"
+                   id="deals-search-input"
+                   class="deals-search-input"
+                   placeholder="جستجو با عنوان معامله..."
+                   autocomplete="off">
+            <label class="deals-filter-label" for="deals-status-filter">وضعیت:</label>
+            <select id="deals-status-filter" class="deals-status-select">
+              <option value="">همه وضعیت‌ها</option>
+              <option value="init">تعریف اولیه</option>
+              <option value="consultant_pending">در انتظار تایید مشاور</option>
+              <option value="pending">در انتظار تایید مدیر</option>
+              <option value="approved">تایید شده</option>
+              <option value="rejected">رد شده</option>
+            </select>
+            <button type="button"
+                    id="deals-filter-apply"
+                    class="btn-ghost deals-filter-btn">اعمال</button>
           </div>
           <div id="deals-container" class="cards-grid"></div>
           <div id="deals-pagination" class="pagination"></div>
@@ -31,7 +61,13 @@
           <div class="dashboard-profile-avatar">{{ request.user.first_name|default:request.user.username|slice:":1" }}</div>
           <div class="dashboard-profile-info">
             <p class="dashboard-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
-            <p class="dashboard-profile-meta">بنگاه: {{ request.user.office.name|default:"بنگاه مشخص نشده" }}</p>
+            <p class="dashboard-profile-meta">
+              {% if is_consultant %}
+                مشاور
+              {% else %}
+                بنگاه: {{ request.user.office.name|default:"بنگاه مشخص نشده" }}
+              {% endif %}
+            </p>
             <span class="dashboard-profile-role">نقش: {{ request.user.role|default:"مشخص نشده" }}</span>
           </div>
         </div>
@@ -39,38 +75,65 @@
           <a href="{% url 'profile' %}">اطلاعات کاربری</a>
         </div>
       </div>
-      <h2 class="sidebar-section-title">امکانات</h2>
-      <ul class="module-list">
-        <a class="module-item" href="{% url 'deal-create-view' %}">
-          <div>
-            <span>ثبت معامله جدید</span>
-            <br>
-            <small>ثبت معامله و اطلاعات مالی</small>
-          </div>
-        </a>
-        <a class="module-item" href="{% url 'create_deal_view' %}">
-          <div>
-            <span>ثبت مبایعه‌نامه</span>
-            <br>
-            <small>قرارداد، قالب و چاپ مبایعه‌نامه</small>
-          </div>
-        </a>
-        <a class="module-item" href="{% url 'manage-accounts' %}">
-          <div>
-            <span>مدیریت حساب‌ها</span>
-            <br>
-            <small>مشتریان و مشاوران دفتر</small>
-          </div>
-        </a>
-        <a class="module-item"
-           href="{% url 'finance:accounting-documents-list' %}">
-          <div>
-            <span>اسناد حسابداری</span>
-            <br>
-            <small>لیست و مدیریت اسناد حسابداری</small>
-          </div>
-        </a>
-      </ul>
+      {% if not is_consultant %}
+        <h2 class="sidebar-section-title sidebar-section-title--services">امکانات</h2>
+        <ul class="module-list module-list--services">
+          <a class="module-item" href="{% url 'deal-create-view' %}">
+            <div>
+              <span>ثبت معامله جدید</span>
+              <br>
+              <small>ثبت معامله و اطلاعات مالی</small>
+            </div>
+          </a>
+          <a class="module-item" href="{% url 'create_deal_view' %}">
+            <div>
+              <span>ثبت مبایعه‌نامه</span>
+              <br>
+              <small>قرارداد، قالب و چاپ مبایعه‌نامه</small>
+            </div>
+          </a>
+          <a class="module-item" href="{% url 'manage-accounts' %}">
+            <div>
+              <span>مدیریت حساب‌ها</span>
+              <br>
+              <small>مشتریان و مشاوران دفتر</small>
+            </div>
+          </a>
+        </ul>
+        <h2 class="sidebar-section-title sidebar-section-title--finance">حسابداری املاک</h2>
+        <ul class="module-list module-list--finance">
+          <a class="module-item module-item--finance-hub"
+             href="{% url 'finance:office-finance' %}">
+            <div>
+              <span>صفحه مالی بنگاه</span>
+              <br>
+              <small>خلاصه گزارش، حساب‌های بنگاه، معاملات و تراکنش‌ها</small>
+            </div>
+          </a>
+          <a class="module-item"
+             href="{% url 'finance:accounting-documents-list' %}">
+            <div>
+              <span>اسناد حسابداری</span>
+              <br>
+              <small>لیست اسناد روزنامه، دریافت، پرداخت و کمیسیون</small>
+            </div>
+          </a>
+        </ul>
+      {% else %}
+        <h2 class="sidebar-section-title">امکانات</h2>
+        <ul class="module-list">
+          <a class="module-item" href="{% url 'consultant-summary' %}">
+            <div>
+              <span>خلاصه کمیسیون و معاملات من</span>
+              <br>
+              <small>جزییات معاملات، سهم کمیسیون و لینک دفتر حساب</small>
+            </div>
+          </a>
+        </ul>
+        <p class="sidebar-consultant-note">
+          معاملاتی که در آن مشاور هستید و نیاز به تایید شما دارند، در کارت‌ها با برچسب «منتظر نظر شما» متمایز شده‌اند.
+        </p>
+      {% endif %}
     </aside>
   </div>
   <div class="modal-overlay" id="dealModalOverlay" aria-hidden="true">
@@ -98,7 +161,9 @@
       contractPdfUrlTemplate: "{% url 'contract_pdf' pk=0 %}",
       generateContractUrlTemplate: "{% url 'generate_contract' deal_id=0 %}",
       dealAccountsUrlTemplate: "{% url 'finance:deal-accounts' deal_id=0 %}",
-      isOfficeManager: {{ request.user.is_office_manager|yesno:"true,false" }}
+      consultantApprovalUrlTemplate: "{% url 'consultant-approval' deal_id=0 %}",
+      isOfficeManager: {{ request.user.is_office_manager|yesno:"true,false" }},
+      isConsultant: {{ is_consultant|yesno:"true,false" }}
     };
   </script>
   <script src="{% static 'js/dashboard.js' %}"></script>

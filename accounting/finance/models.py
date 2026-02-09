@@ -9,10 +9,20 @@ from django.utils import timezone
 
 
 def payment_receipt_upload_to(instance, filename):
-    """مسیر یکتا برای ذخیره فایل رسید تا از تداخل و 404 جلوگیری شود."""
     ext = os.path.splitext(filename)[1] or ".bin"
     safe_ext = ext.lower() if ext else ".bin"
     return "finance/payment_receipts/{year}/{month}/{uuid}{ext}".format(
+        year=timezone.now().strftime("%Y"),
+        month=timezone.now().strftime("%m"),
+        uuid=uuid.uuid4().hex,
+        ext=safe_ext,
+    )
+
+
+def pending_payment_receipt_upload_to(instance, filename):
+    ext = os.path.splitext(filename)[1] or ".bin"
+    safe_ext = ext.lower() if ext else ".bin"
+    return "finance/pending_receipts/{year}/{month}/{uuid}{ext}".format(
         year=timezone.now().strftime("%Y"),
         month=timezone.now().strftime("%m"),
         uuid=uuid.uuid4().hex,
@@ -29,17 +39,14 @@ class Account(models.Model):
         EXPENSE = "expense", "هزینه"
 
     class AccountCategory(models.TextChoices):
-        # بستانکاری (Receivables)
         RECEIVABLE_CLIENT = "receivable_client", "بستانکاری از مشتری"
         RECEIVABLE_CONSULTANT = "receivable_consultant", "بستانکاری از مشاور"
         RECEIVABLE_OFFICE = "receivable_office", "بستانکاری از بنگاه"
         RECEIVABLE_MANAGER = "receivable_manager", "بستانکاری از مدیر بنگاه"
-        # طلبکاری (Payables)
         PAYABLE_CLIENT = "payable_client", "طلبکاری به مشتری"
         PAYABLE_CONSULTANT = "payable_consultant", "طلبکاری به مشاور"
         PAYABLE_OFFICE = "payable_office", "طلبکاری به بنگاه"
         PAYABLE_MANAGER = "payable_manager", "طلبکاری به مدیر بنگاه"
-        # حساب‌های پایه
         REVENUE_COMMISSION = "revenue_commission", "درآمد کمیسیون"
         EXPENSE_CONSULTANT_SHARE = "expense_consultant_share", "هزینه سهم مشاور"
         EXPENSE_MANAGER_SHARE = "expense_manager_share", "هزینه سهم مدیر"
@@ -380,3 +387,95 @@ class AccountPayment(models.Model):
 
     def __str__(self):
         return f"{self.get_direction_display()} {self.amount} برای حساب {self.account}"
+
+
+class PendingDealPayment(models.Model):
+    """
+    تراکنش پیشنهادی توسط مشاور برای حساب‌های مشتری؛ پس از تایید اپراتور/مدیر به دفتر اعمال می‌شود.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "در انتظار تایید"
+        APPROVED = "approved", "تایید شده"
+        REJECTED = "rejected", "رد شده"
+
+    deal = models.ForeignKey(
+        "transactions.Deals",
+        on_delete=models.CASCADE,
+        related_name="pending_payments",
+        verbose_name="معامله",
+    )
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.PROTECT,
+        related_name="pending_deal_payments",
+        verbose_name="حساب",
+    )
+    amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="مبلغ (ریال)",
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    direction = models.CharField(
+        max_length=10,
+        choices=AccountPayment.Direction.choices,
+        verbose_name="نوع",
+    )
+    date = models.DateField(verbose_name="تاریخ پرداخت/دریافت")
+    method = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name="روش پرداخت/دریافت",
+    )
+    description = models.TextField(blank=True, default="", verbose_name="توضیحات")
+    receipt_file = models.FileField(
+        upload_to=pending_payment_receipt_upload_to,
+        blank=True,
+        null=True,
+        verbose_name="ضمیمه رسید",
+    )
+    created_by = models.ForeignKey(
+        "users.CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_pending_deal_payments",
+        verbose_name="ثبت‌کننده (مشاور)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name="وضعیت",
+    )
+    reviewed_by = models.ForeignKey(
+        "users.CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_pending_deal_payments",
+        verbose_name="تایید/رد توسط",
+    )
+    reviewed_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="تاریخ تایید/رد"
+    )
+    rejection_reason = models.TextField(blank=True, default="", verbose_name="علت رد")
+    # پس از تایید، تراکنش واقعی ساخته می‌شود و این رکورد به آن لینک می‌شود (اختیاری)
+    account_payment = models.OneToOneField(
+        AccountPayment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pending_source",
+        verbose_name="تراکنش اعمال‌شده",
+    )
+
+    class Meta:
+        verbose_name = "تراکنش در انتظار تایید"
+        verbose_name_plural = "تراکنش‌های در انتظار تایید"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.get_direction_display()} {self.amount} — {self.get_status_display()}"

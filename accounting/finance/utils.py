@@ -1,204 +1,171 @@
 from .models import Account
 
 
+def _get_or_create_account(code, name, parent, account_type, category):
+    """یک حساب را با کد یکتا ایجاد یا برگردان (برای نمودار حساب‌ها)."""
+    acc, _ = Account.objects.get_or_create(
+        code=code,
+        defaults={
+            "name": name,
+            "parent": parent,
+            "account_type": account_type,
+            "category": category,
+        },
+    )
+    return acc
+
+
 def setup_chart_of_accounts():
     """
     ایجاد نمودار حساب‌های پایه بر اساس ساختار تعریف شده.
     پشتیبانی از بستانکاری و طلبکاری برای مشتریان، مشاوران، بنگاه و مدیر بنگاه.
     """
-    # 1. حساب‌های اصلی (Root Accounts)
+    # حساب‌های اصلی (ریشه)
     assets, _ = Account.objects.get_or_create(
-        name="دارایی‌ها",
         code="1",
         defaults={
+            "name": "دارایی‌ها",
             "account_type": Account.AccountType.ASSET,
             "category": Account.AccountCategory.OTHER,
         },
     )
     liabilities, _ = Account.objects.get_or_create(
-        name="بدهی‌ها",
         code="2",
         defaults={
+            "name": "بدهی‌ها",
             "account_type": Account.AccountType.LIABILITY,
             "category": Account.AccountCategory.OTHER,
         },
     )
     income, _ = Account.objects.get_or_create(
-        name="درآمدها",
         code="4",
         defaults={
+            "name": "درآمدها",
             "account_type": Account.AccountType.INCOME,
             "category": Account.AccountCategory.OTHER,
         },
     )
     expenses, _ = Account.objects.get_or_create(
-        name="هزینه‌ها",
         code="5",
         defaults={
+            "name": "هزینه‌ها",
             "account_type": Account.AccountType.EXPENSE,
             "category": Account.AccountCategory.OTHER,
         },
     )
 
-    # 2. حساب‌های تفصیلی (Sub Accounts)
-
-    # 1/1/01/001 -> نقد و بانک
-    cash_parent, _ = Account.objects.get_or_create(
-        code="110101",
-        name="نقد و بانک",
-        defaults={
-            "parent": assets,
-            "account_type": Account.AccountType.ASSET,
-            "category": Account.AccountCategory.CASH_BANK,
-        },
-    )
-
-    # 1/1/02/001 -> بستانکاری از مشتریان (کمیسیون دریافتنی)
-    receivables_commission, _ = Account.objects.get_or_create(
-        code="110201",
-        name="بستانکاری کمیسیون از مشتریان",
-        defaults={
-            "parent": assets,
-            "account_type": Account.AccountType.ASSET,
-            "category": Account.AccountCategory.RECEIVABLE_CLIENT,
-        },
-    )
-
-    # 1/1/02/002 -> بستانکاری از مشاوران
-    receivables_consultant, _ = Account.objects.get_or_create(
-        code="110302",
-        name="بستانکاری از مشاوران",
-        defaults={
-            "parent": assets,
-            "account_type": Account.AccountType.ASSET,
-            "category": Account.AccountCategory.RECEIVABLE_CONSULTANT,
-        },
-    )
-
-    # 1/1/02/003 -> بستانکاری از بنگاه
-    receivables_office, _ = Account.objects.get_or_create(
-        code="110403",
-        name="بستانکاری از بنگاه",
-        defaults={
-            "parent": assets,
-            "account_type": Account.AccountType.ASSET,
-            "category": Account.AccountCategory.RECEIVABLE_OFFICE,
-        },
-    )
-
-    # 1/1/02/004 -> بستانکاری از مدیر بنگاه
-    receivables_manager, _ = Account.objects.get_or_create(
-        code="110504",
-        name="بستانکاری از مدیر بنگاه",
-        defaults={
-            "parent": assets,
-            "account_type": Account.AccountType.ASSET,
-            "category": Account.AccountCategory.RECEIVABLE_MANAGER,
-        },
-    )
-
-    # 2/1/01/001 -> طلبکاری به مشاوران
-    payables_consultant, _ = Account.objects.get_or_create(
-        code="210101",
-        name="طلبکاری به مشاوران",
-        defaults={
-            "parent": liabilities,
-            "account_type": Account.AccountType.LIABILITY,
-            "category": Account.AccountCategory.PAYABLE_CONSULTANT,
-        },
-    )
-
-    # 2/1/01/002 -> حساب‌های جاری/دفتری اشخاص
-    payables_persons, _ = Account.objects.get_or_create(
-        code="210201",
-        name="حساب‌های جاری/دفتری اشخاص",
-        defaults={
-            "parent": liabilities,
-            "account_type": Account.AccountType.LIABILITY,
-            "category": Account.AccountCategory.OTHER,
-        },
-    )
-
-    # 2/1/01/003 -> طلبکاری به مشتریان
-    payables_clients, _ = Account.objects.get_or_create(
-        code="210301",
-        name="طلبکاری به مشتریان",
-        defaults={
-            "parent": liabilities,
-            "account_type": Account.AccountType.LIABILITY,
-            "category": Account.AccountCategory.PAYABLE_CLIENT,
-        },
-    )
-
-    # 2/1/01/004 -> طلبکاری به بنگاه
-    payables_offices, _ = Account.objects.get_or_create(
-        code="210401",
-        name="طلبکاری به بنگاه",
-        defaults={
-            "parent": liabilities,
-            "account_type": Account.AccountType.LIABILITY,
-            "category": Account.AccountCategory.PAYABLE_OFFICE,
-        },
-    )
-
-    # 2/1/01/005 -> طلبکاری به مدیر بنگاه
-    payables_managers, _ = Account.objects.get_or_create(
-        code="210501",
-        name="طلبکاری به مدیر بنگاه",
-        defaults={
-            "parent": liabilities,
-            "account_type": Account.AccountType.LIABILITY,
-            "category": Account.AccountCategory.PAYABLE_MANAGER,
-        },
-    )
-
-    # 4/1/01/001 -> درآمد کمیسیون
-    revenue_commission, _ = Account.objects.get_or_create(
-        code="410101",
-        name="درآمد کمیسیون",
-        defaults={
-            "parent": income,
-            "account_type": Account.AccountType.INCOME,
-            "category": Account.AccountCategory.REVENUE_COMMISSION,
-        },
-    )
-
-    # 5/1/01/001 -> هزینه سهم مشاور
-    expense_consultant_share, _ = Account.objects.get_or_create(
-        code="510101",
-        name="هزینه سهم مشاور",
-        defaults={
-            "parent": expenses,
-            "account_type": Account.AccountType.EXPENSE,
-            "category": Account.AccountCategory.EXPENSE_CONSULTANT_SHARE,
-        },
-    )
-
-    # 5/1/01/002 -> هزینه سهم مدیر
-    expense_manager_share, _ = Account.objects.get_or_create(
-        code="510201",
-        name="هزینه سهم مدیر",
-        defaults={
-            "parent": expenses,
-            "account_type": Account.AccountType.EXPENSE,
-            "category": Account.AccountCategory.EXPENSE_MANAGER_SHARE,
-        },
-    )
+    # حساب‌های تفصیلی: (کد، نام، والد، نوع، دسته)
+    sub_accounts = [
+        (
+            "110101",
+            "نقد و بانک",
+            assets,
+            Account.AccountType.ASSET,
+            Account.AccountCategory.CASH_BANK,
+        ),
+        (
+            "110201",
+            "بستانکاری کمیسیون از مشتریان",
+            assets,
+            Account.AccountType.ASSET,
+            Account.AccountCategory.RECEIVABLE_CLIENT,
+        ),
+        (
+            "110302",
+            "بستانکاری از مشاوران",
+            assets,
+            Account.AccountType.ASSET,
+            Account.AccountCategory.RECEIVABLE_CONSULTANT,
+        ),
+        (
+            "110403",
+            "بستانکاری از بنگاه",
+            assets,
+            Account.AccountType.ASSET,
+            Account.AccountCategory.RECEIVABLE_OFFICE,
+        ),
+        (
+            "110504",
+            "بستانکاری از مدیر بنگاه",
+            assets,
+            Account.AccountType.ASSET,
+            Account.AccountCategory.RECEIVABLE_MANAGER,
+        ),
+        (
+            "210101",
+            "طلبکاری به مشاوران",
+            liabilities,
+            Account.AccountType.LIABILITY,
+            Account.AccountCategory.PAYABLE_CONSULTANT,
+        ),
+        (
+            "210201",
+            "حساب‌های جاری/دفتری اشخاص",
+            liabilities,
+            Account.AccountType.LIABILITY,
+            Account.AccountCategory.OTHER,
+        ),
+        (
+            "210301",
+            "طلبکاری به مشتریان",
+            liabilities,
+            Account.AccountType.LIABILITY,
+            Account.AccountCategory.PAYABLE_CLIENT,
+        ),
+        (
+            "210401",
+            "طلبکاری به بنگاه",
+            liabilities,
+            Account.AccountType.LIABILITY,
+            Account.AccountCategory.PAYABLE_OFFICE,
+        ),
+        (
+            "210501",
+            "طلبکاری به مدیر بنگاه",
+            liabilities,
+            Account.AccountType.LIABILITY,
+            Account.AccountCategory.PAYABLE_MANAGER,
+        ),
+        (
+            "410101",
+            "درآمد کمیسیون",
+            income,
+            Account.AccountType.INCOME,
+            Account.AccountCategory.REVENUE_COMMISSION,
+        ),
+        (
+            "510101",
+            "هزینه سهم مشاور",
+            expenses,
+            Account.AccountType.EXPENSE,
+            Account.AccountCategory.EXPENSE_CONSULTANT_SHARE,
+        ),
+        (
+            "510201",
+            "هزینه سهم مدیر",
+            expenses,
+            Account.AccountType.EXPENSE,
+            Account.AccountCategory.EXPENSE_MANAGER_SHARE,
+        ),
+    ]
+    created = {}
+    for code, name, parent, acc_type, category in sub_accounts:
+        created[code] = _get_or_create_account(code, name, parent, acc_type, category)
 
     return {
-        "cash_bank": cash_parent,
-        "receivables_commission": receivables_commission,
-        "receivables_consultant": receivables_consultant,
-        "receivables_office": receivables_office,
-        "receivables_manager": receivables_manager,
-        "payables_consultant": payables_consultant,
-        "payables_persons": payables_persons,
-        "payables_clients": payables_clients,
-        "payables_offices": payables_offices,
-        "payables_managers": payables_managers,
-        "revenue_commission": revenue_commission,
-        "expense_consultant_share": expense_consultant_share,
-        "expense_manager_share": expense_manager_share,
+        "cash_bank": created["110101"],
+        "receivables_commission": created["110201"],
+        "receivables_consultant": created["110302"],
+        "receivables_office": created["110403"],
+        "receivables_manager": created["110504"],
+        "payables_consultant": created["210101"],
+        "payables_persons": created["210201"],
+        "payables_clients": created["210301"],
+        "payables_offices": created["210401"],
+        "payables_managers": created["210501"],
+        "revenue_commission": created["410101"],
+        "expense_consultant_share": created["510101"],
+        "expense_manager_share": created["510201"],
     }
 
 

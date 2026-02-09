@@ -167,6 +167,59 @@
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
 }
 
+.deals-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 14px 0 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.deals-filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dash-muted);
+}
+
+.deals-search-input {
+  min-width: 200px;
+  max-width: 280px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: var(--color-surface);
+  color: var(--dash-text);
+}
+
+.deals-search-input::placeholder {
+  color: var(--dash-muted);
+}
+
+.deals-search-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.deals-status-select {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: var(--color-surface);
+  color: var(--dash-text);
+  min-width: 160px;
+}
+
+.deals-filter-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -215,6 +268,41 @@
 
 .deal-card.init::before {
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.75), rgba(37, 99, 235, 0.55));
+}
+
+/* معاملات منتظر نظر مشاور — متمایز برای پیدا کردن سریع */
+.deal-card.deal-card--pending-my-approval {
+  border-color: rgba(251, 191, 36, 0.7);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-surface) 85%, #fef3c7 15%),
+    color-mix(in srgb, var(--color-surface-alt) 75%, #fde68a 25%)
+  );
+  box-shadow: 0 4px 24px rgba(251, 191, 36, 0.2);
+}
+
+.deal-card.deal-card--pending-my-approval::before {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.75));
+  width: 6px;
+}
+
+.deal-badge-pending-my-approval {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.35);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  white-space: nowrap;
+  margin-left: 6px;
+}
+
+html[data-theme="light"] .deal-badge-pending-my-approval {
+  background: rgba(245, 158, 11, 0.25);
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.5);
 }
 
 .deal-card:hover {
@@ -474,6 +562,12 @@
   background: rgba(127, 29, 29, 0.4);
 }
 
+.deal-status.consultant_pending {
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #fcd34d;
+  background: rgba(120, 53, 15, 0.4);
+}
+
 /* Pagination */
 .pagination {
   display: flex;
@@ -689,6 +783,45 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.detail-card--full-width {
+  grid-column: 1 / -1;
+}
+
+.consultant-approvals-table-wrap {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.consultant-approvals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.consultant-approvals-table th,
+.consultant-approvals-table td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.consultant-approvals-table th {
+  color: var(--dash-muted);
+  font-weight: 600;
+}
+
+.consultant-approvals-table .num {
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+}
+
+.consultant-approvals-table .consultant-note-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-card {
@@ -983,6 +1116,85 @@
   margin-bottom: 8px;
 }
 
+/* سرفصل و آیتم‌های بخش امکانات — رنگ متمایز (سبز/فیروزه‌ای) */
+.sidebar-section-title--services {
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(6, 182, 212, 0.15));
+  border: 1px solid rgba(20, 184, 166, 0.45);
+  color: #5eead4;
+  margin-bottom: 10px;
+}
+
+.module-list--services .module-item {
+  border-color: rgba(20, 184, 166, 0.4);
+  background: color-mix(in srgb, var(--color-surface) 88%, rgba(20, 184, 166, 0.08));
+}
+
+.module-list--services .module-item:hover {
+  background: rgba(20, 184, 166, 0.25);
+  border-color: rgba(20, 184, 166, 0.7);
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.2);
+}
+
+.module-list--services .module-item:hover span,
+.module-list--services .module-item:hover small {
+  color: #99f6e4;
+}
+
+/* سرفصل و آیتم‌های بخش حسابداری املاک — رنگ متمایز (طلایی/کهربایی) */
+.sidebar-section-title--finance {
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.15));
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fcd34d;
+  margin-bottom: 10px;
+}
+
+.module-list--finance .module-item {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: color-mix(in srgb, var(--color-surface) 86%, rgba(251, 191, 36, 0.08));
+}
+
+.module-list--finance .module-item:hover {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: rgba(245, 158, 11, 0.7);
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.18);
+}
+
+.module-list--finance .module-item:hover span,
+.module-list--finance .module-item:hover small {
+  color: #fef08a;
+}
+
+/* لینک «صفحه مالی بنگاه» پررنگ‌تر */
+.module-item--finance-hub {
+  border-width: 1.5px;
+  border-color: rgba(251, 191, 36, 0.55);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.08));
+  font-weight: 700;
+}
+
+.module-item--finance-hub:hover {
+  background: rgba(251, 191, 36, 0.28);
+  border-color: rgba(251, 191, 36, 0.8);
+  box-shadow: 0 6px 18px rgba(251, 191, 36, 0.25);
+}
+
+.sidebar-consultant-note {
+  font-size: 13px;
+  color: var(--color-text-muted, #94a3b8);
+  line-height: 1.5;
+  margin: 0;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--color-surface-alt) 60%, transparent);
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
 .module-list {
   list-style: none;
   margin: 0 0 12px;
@@ -1218,6 +1430,28 @@ html[data-theme="light"] .loading {
 html[data-theme="light"] .sidebar-section-title {
   font-size: 18px;
   color: #0f172a;
+}
+
+html[data-theme="light"] .sidebar-section-title--services {
+  color: #0f766e;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(6, 182, 212, 0.12));
+  border-color: rgba(20, 184, 166, 0.5);
+}
+
+html[data-theme="light"] .module-list--services .module-item:hover span,
+html[data-theme="light"] .module-list--services .module-item:hover small {
+  color: #0f766e;
+}
+
+html[data-theme="light"] .sidebar-section-title--finance {
+  color: #b45309;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.14));
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+html[data-theme="light"] .module-list--finance .module-item:hover span,
+html[data-theme="light"] .module-list--finance .module-item:hover small {
+  color: #92400e;
 }
 
 html[data-theme="light"] .module-item span {

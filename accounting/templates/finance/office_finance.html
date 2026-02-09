@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% load finance_tags %}
+{% block title %}حسابداری املاک — مدیریت مالی بنگاه{% endblock %}
+{% block body_class %}office-finance-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    .office-finance-page .shell-content {
+      align-items: flex-start;
+      padding-top: 1.5rem;
+      padding-bottom: 3rem;
+    }
+    .office-finance-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .office-finance-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      text-decoration: none;
+    }
+    .office-finance-back:hover { color: var(--color-accent); }
+    .office-finance-title { margin: 0; font-size: 1.5rem; font-family: var(--font-title); }
+    .office-finance-subtitle { margin: 0.25rem 0 0; font-size: 14px; color: var(--color-text-muted); }
+    .finance-quick-nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .finance-quick-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 72px;
+      padding: 14px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: var(--color-surface);
+      color: var(--color-text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .finance-quick-nav a:hover {
+      border-color: var(--color-accent);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    .finance-quick-nav a.coming-soon {
+      opacity: 0.75;
+      cursor: default;
+      pointer-events: none;
+    }
+    .finance-quick-nav a.coming-soon span { display: block; }
+    .finance-quick-nav a.coming-soon span:last-child { font-size: 11px; font-weight: 400; color: var(--color-text-muted); margin-top: 4px; }
+    .office-finance-sections { display: grid; gap: 1.5rem; }
+    .office-finance-section {
+      background: color-mix(in srgb, var(--color-surface-alt) 60%, transparent);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 20px;
+      padding: 1.5rem 1.75rem;
+    }
+    .office-finance-section h2 {
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+      font-family: var(--font-title);
+      color: var(--color-text);
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    }
+    .office-finance-section .section-desc {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+    .report-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .report-card {
+      padding: 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: var(--color-surface);
+    }
+    .report-card-label { font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px; }
+    .report-card-value { font-size: 1.1rem; font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; }
+    .report-card-value.positive { color: #15803d; }
+    .report-card-value.negative { color: #b91c1c; }
+    .account-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .account-card {
+      padding: 1rem 1.25rem;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: var(--color-surface);
+    }
+    .account-card-title { font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px; }
+    .account-card-name { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .account-card-balance { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; }
+    .account-card-balance.positive { color: #15803d; }
+    .account-card-balance.negative { color: #b91c1c; }
+    .office-finance-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .office-finance-table th, .office-finance-table td {
+      padding: 10px 12px;
+      text-align: right;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .office-finance-table th { color: var(--color-text-muted); font-weight: 600; }
+    .office-finance-table .num { font-variant-numeric: tabular-nums; direction: ltr; }
+    .office-finance-table .link-deal { color: var(--color-accent); text-decoration: none; }
+    .office-finance-table .link-deal:hover { text-decoration: underline; }
+    .office-finance-table .no-ledger { color: var(--color-text-muted); font-size: 12px; }
+    .section-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem; }
+    .section-actions a {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: transparent;
+      color: var(--color-text);
+      text-decoration: none;
+    }
+    .section-actions a:hover { border-color: var(--color-accent); color: var(--color-accent); }
+    .empty-msg { padding: 1.5rem; text-align: center; color: var(--color-text-muted); font-size: 14px; border-radius: 12px; background: rgba(148, 163, 184, 0.06); }
+    .roadmap-note {
+      margin-top: 2rem;
+      padding: 1rem 1.25rem;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .roadmap-note a { color: var(--color-accent); }
+    @media (max-width: 640px) {
+      .report-cards { grid-template-columns: repeat(2, 1fr); }
+      .account-cards { grid-template-columns: 1fr; }
+      .finance-quick-nav { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <header class="office-finance-header">
+        <a class="office-finance-back" href="{% url 'dashboard' %}">← بازگشت به داشبورد</a>
+        <h1 class="office-finance-title">حسابداری املاک — مدیریت مالی بنگاه</h1>
+        <p class="office-finance-subtitle">
+          {% if office %}
+            بنگاه: {{ office.name }} — خلاصه گزارش، حساب‌های بنگاه، اسناد، معاملات و تراکنش‌ها
+          {% else %}
+            برای استفاده از امکانات مالی به یک بنگاه متصل شوید.
+          {% endif %}
+        </p>
+      </header>
+      {% if office %}
+        <nav class="finance-quick-nav" aria-label="دسترسی سریع ماژول‌های حسابداری">
+          <a href="#section-accounts-deals"><span>خلاصه گزارش</span><span>در همین صفحه</span></a>
+          <a href="#section-accounts-deals"><span>حساب‌های بنگاه</span><span>بنگاه و مدیر</span></a>
+          <a href="{% url 'finance:chart-of-accounts' %}"><span>نمودار حساب‌ها</span><span>لیست حساب‌ها و گردش</span></a>
+          <a href="{% url 'finance:accounting-documents-list' %}"><span>اسناد حسابداری</span><span>لیست اسناد</span></a>
+          <a href="{% url 'finance:journal-create' %}"><span>سند روزنامه</span><span>ثبت سند دستی</span></a>
+          <a href="{% url 'finance:receipt-create' %}"><span>سند دریافت</span><span>ثبت دریافت</span></a>
+          <a href="{% url 'finance:payment-create' %}"><span>سند پرداخت</span><span>ثبت پرداخت</span></a>
+          <a href="#section-accounts-deals"><span>معاملات</span><span>جدول معاملات و دفتر معامله</span></a>
+          <a href="#section-transactions"><span>تراکنش‌ها</span><span>پرداخت و دریافت</span></a>
+          <a href="#" class="coming-soon" aria-disabled="true"><span>گزارش سود و زیان</span><span>به زودی</span></a>
+        </nav>
+        <div class="office-finance-sections">
+          <section class="office-finance-section" id="section-accounts-deals">
+            <h2>حساب‌های بنگاه و معاملات مرتبط</h2>
+            <p class="section-desc">
+              مانده حساب‌های بنگاه و مدیر دفتر، معاملات این بنگاه و خلاصه گزارش درآمد و هزینه از سند کمیسیون معاملات.
+            </p>
+            <h3 style="font-size:13px;
+                       color:var(--color-text-muted);
+                       margin:0 0 0.5rem">خلاصه گزارش</h3>
+            <div class="report-cards">
+              <div class="report-card">
+                <div class="report-card-label">تعداد معاملات</div>
+                <div class="report-card-value">{{ deals_total_count|intcomma }}</div>
+              </div>
+              <div class="report-card">
+                <div class="report-card-label">معاملات دارای سند کمیسیون</div>
+                <div class="report-card-value">{{ deals_with_ledger_count|intcomma }}</div>
+              </div>
+              <div class="report-card">
+                <div class="report-card-label">جمع درآمد کمیسیون (ریال)</div>
+                <div class="report-card-value positive">{{ report_total_revenue|floatformat:0|intcomma }}</div>
+              </div>
+              <div class="report-card">
+                <div class="report-card-label">جمع هزینه سهم مشاور (ریال)</div>
+                <div class="report-card-value negative">{{ report_total_expense_consultant|floatformat:0|intcomma }}</div>
+              </div>
+              <div class="report-card">
+                <div class="report-card-label">جمع هزینه سهم مدیر (ریال)</div>
+                <div class="report-card-value negative">{{ report_total_expense_manager|floatformat:0|intcomma }}</div>
+              </div>
+            </div>
+            <h3 style="font-size:13px;
+                       color:var(--color-text-muted);
+                       margin:0 0 0.5rem">حساب‌های بنگاه</h3>
+            <div class="account-cards">
+              <div class="account-card">
+                <div class="account-card-title">بستانکاری از بنگاه</div>
+                <div class="account-card-name">{{ office_receivable.code }} — {{ office_receivable.name }}</div>
+                <div class="account-card-balance {% if balance_receivable >= 0 %}positive{% else %}negative{% endif %}">
+                  مانده: {{ balance_receivable|floatformat:0|intcomma }} ریال
+                </div>
+              </div>
+              <div class="account-card">
+                <div class="account-card-title">طلبکاری به بنگاه</div>
+                <div class="account-card-name">{{ office_payable.code }} — {{ office_payable.name }}</div>
+                <div class="account-card-balance {% if balance_payable >= 0 %}positive{% else %}negative{% endif %}">
+                  مانده: {{ balance_payable|floatformat:0|intcomma }} ریال
+                </div>
+              </div>
+            </div>
+            <h3 style="font-size:13px;
+                       color:var(--color-text-muted);
+                       margin:0 0 0.5rem">حساب‌های مدیر دفتر</h3>
+            <div class="account-cards">
+              <div class="account-card">
+                <div class="account-card-title">بستانکاری از مدیر</div>
+                <div class="account-card-name">{{ manager_receivable.code }} — {{ manager_receivable.name }}</div>
+                <div class="account-card-balance {% if balance_manager_receivable >= 0 %}positive{% else %}negative{% endif %}">
+                  مانده: {{ balance_manager_receivable|floatformat:0|intcomma }} ریال
+                </div>
+              </div>
+              <div class="account-card">
+                <div class="account-card-title">پرداختنی به مدیر</div>
+                <div class="account-card-name">{{ manager_payable.code }} — {{ manager_payable.name }}</div>
+                <div class="account-card-balance {% if balance_manager_payable >= 0 %}positive{% else %}negative{% endif %}">
+                  مانده: {{ balance_manager_payable|floatformat:0|intcomma }} ریال
+                </div>
+              </div>
+            </div>
+            <h3 style="font-size:13px;
+                       color:var(--color-text-muted);
+                       margin:0 0 0.5rem">معاملات مرتبط با بنگاه</h3>
+            {% if deals %}
+              <table class="office-finance-table">
+                <thead>
+                  <tr>
+                    <th>معامله</th>
+                    <th>نوع</th>
+                    <th>مبلغ</th>
+                    <th>تاریخ</th>
+                    <th>وضعیت</th>
+                    <th>دفتر حساب</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in deals %}
+                    <tr>
+                      <td>#{{ item.deal.id }} {{ item.deal.title|truncatewords:4|default:"—" }}</td>
+                      <td>{{ item.deal.type.name }}</td>
+                      <td class="num">{{ item.deal.amount|floatformat:0|intcomma|default:"—" }}</td>
+                      <td>{{ item.deal.date|shamsi_date }}</td>
+                      <td>{{ item.deal.get_status_display|default:item.deal.status }}</td>
+                      <td>
+                        {% if item.has_ledger %}
+                          <a class="link-deal"
+                             href="{% url 'finance:deal-accounts' item.deal.id %}">دفتر حساب معامله</a>
+                        {% else %}
+                          <span class="no-ledger">سند کمیسیون ثبت نشده</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty-msg">هیچ معامله‌ای برای این بنگاه ثبت نشده است.</div>
+            {% endif %}
+            <div class="section-actions">
+              <a href="{% url 'finance:accounting-documents-list' %}">اسناد حسابداری</a>
+            </div>
+          </section>
+          <section class="office-finance-section" id="section-transactions">
+            <h2>تراکنش‌ها و درآمدها و هزینه‌ها</h2>
+            <p class="section-desc">آخرین پرداخت‌ها و دریافت‌های ثبت‌شده برای معاملات این بنگاه.</p>
+            <h3 style="font-size:13px;
+                       color:var(--color-text-muted);
+                       margin:0 0 0.5rem">آخرین تراکنش‌ها (پرداخت/دریافت)</h3>
+            {% if recent_payments %}
+              <table class="office-finance-table">
+                <thead>
+                  <tr>
+                    <th>تاریخ</th>
+                    <th>حساب</th>
+                    <th>نوع</th>
+                    <th>مبلغ (ریال)</th>
+                    <th>معامله</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in recent_payments %}
+                    <tr>
+                      <td>{{ p.date|shamsi_date }}</td>
+                      <td>{{ p.account.code }} — {{ p.account.name|truncatewords:3 }}</td>
+                      <td>{{ p.get_direction_display }}</td>
+                      <td class="num">{{ p.amount|floatformat:0|intcomma }}</td>
+                      <td>
+                        {% if p.deal_id %}
+                          <a class="link-deal" href="{% url 'finance:deal-accounts' p.deal_id %}">#{{ p.deal_id }}</a>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty-msg">تراکنشی برای معاملات این بنگاه ثبت نشده است.</div>
+            {% endif %}
+            <div class="section-actions">
+              <a href="{% url 'finance:accounting-documents-list' %}">اسناد حسابداری</a>
+            </div>
+          </section>
+        </div>
+      {% else %}
+        <div class="office-finance-sections">
+          <section class="office-finance-section">
+            <p class="empty-msg">برای مشاهده حساب‌های بنگاه و گزارش‌ها به یک بنگاه متصل شوید.</p>
+          </section>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

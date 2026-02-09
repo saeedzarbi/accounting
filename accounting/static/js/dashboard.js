@@ -12,14 +12,18 @@
   const editDealUrlTemplate = config.editDealUrlTemplate || "";
   const approveDealUrlTemplate = config.approveDealUrlTemplate || "";
   const rejectDealUrlTemplate = config.rejectDealUrlTemplate || "";
+  const consultantApprovalUrlTemplate =
+    config.consultantApprovalUrlTemplate || "";
   const contractPdfUrlTemplate = config.contractPdfUrlTemplate || "";
   const generateContractUrlTemplate = config.generateContractUrlTemplate || "";
   const dealAccountsUrlTemplate = config.dealAccountsUrlTemplate || "";
   const isOfficeManager = Boolean(config.isOfficeManager);
+  const isConsultant = Boolean(config.isConsultant);
 
   const PAGE_SIZE = 9;
   const STATUS_MAP = {
     init: "تعریف اولیه",
+    consultant_pending: "در انتظار تایید مشاور",
     pending: "در انتظار تایید مدیر",
     pendding: "در انتظار تایید مدیر",
     approved: "تایید شده",
@@ -39,6 +43,10 @@
 
   function rejectDealUrl(id) {
     return rejectDealUrlTemplate.replace("0", String(id));
+  }
+
+  function consultantApprovalUrl(id) {
+    return consultantApprovalUrlTemplate.replace("0", String(id));
   }
 
   function deleteDealUrl(id) {
@@ -89,6 +97,21 @@
     } catch (e) {
       return String(value);
     }
+  }
+
+  function normalizeDigits(value) {
+    return String(value || "")
+      .replace(/[۰-۹]/g, function (digit) {
+        return "0123456789"["۰۱۲۳۴۵۶۷۸۹".indexOf(digit)];
+      })
+      .replace(/[٠-٩]/g, function (digit) {
+        return "0123456789"["٠١٢٣٤٥٦٧٨٩".indexOf(digit)];
+      });
+  }
+
+  function parseMoneyInput(value) {
+    const cleaned = normalizeDigits(value).replace(/[^\d.]/g, "");
+    return cleaned ? Number(cleaned) : 0;
   }
 
   function splitRoleLabel(role) {
@@ -157,8 +180,9 @@
 
     const html = items
       .map(function (item) {
-        const statusCls = item.status ? " " + item.status : "";
-        const canEdit = item.status !== "approved";
+        const pendingMine = Boolean(item.pending_my_approval);
+        const statusCls = (item.status ? " " + item.status : "") + (pendingMine ? " deal-card--pending-my-approval" : "");
+        const canEdit = !isConsultant && item.status !== "approved";
         const hasMabia = item.latest_contract_id != null;
         const mabiaBadge = hasMabia
           ? '<span class="deal-mabia-badge has" title="مبایعه‌نامه دارد">✓</span>'
@@ -167,14 +191,18 @@
           ? '<a href="' +
             contractPdfUrl(item.latest_contract_id) +
             '" target="_blank" rel="noopener" onclick="event.stopPropagation();">مشاهده مبایعه‌نامه</a>'
-          : '<a href="' + generateContractUrl(item.id) + '" onclick="event.stopPropagation();">ثبت مبایعه‌نامه</a>';
+          : (isConsultant ? "" : '<a href="' + generateContractUrl(item.id) + '" onclick="event.stopPropagation();">ثبت مبایعه‌نامه</a>');
         const editMenuItem = canEdit
           ? '<a href="' + editDealUrl(item.id) + '" onclick="event.stopPropagation();">ویرایش معامله</a>'
-          : '<a href="#" class="disabled" onclick="event.preventDefault(); event.stopPropagation();">ویرایش (غیرفعال برای تایید شده)</a>';
+          : (isConsultant ? "" : '<a href="#" class="disabled" onclick="event.preventDefault(); event.stopPropagation();">ویرایش (غیرفعال برای تایید شده)</a>');
         const createdStr = formatCreatedDate(item.created_at);
         const creatorStr = item.creator ? escapeHtml(item.creator) : "—";
         const typeName = (item.type && item.type.name) || "نامشخص";
-        const statusText = STATUS_MAP[item.status] || item.status || "نامشخص";
+        const statusText =
+          item.status_display ||
+          STATUS_MAP[item.status] ||
+          item.status ||
+          "نامشخص";
 
         return (
           '<div class="deal-card' +
@@ -213,6 +241,9 @@
           "</div>" +
           '<div class="deal-card-footer">' +
           '<div class="deal-footer-badges">' +
+          (pendingMine
+            ? '<span class="deal-badge-pending-my-approval" title="نیاز به ثبت نظر/تایید شما">منتظر نظر شما</span>'
+            : "") +
           '<span class="deal-type">' +
           escapeHtml(typeName) +
           "</span>" +
@@ -311,11 +342,27 @@
     });
   }
 
+  function getDealsQueryParams() {
+    var searchEl = getEl("deals-search-input");
+    var statusEl = getEl("deals-status-filter");
+    var search = (searchEl && searchEl.value) ? searchEl.value.trim() : "";
+    var status = (statusEl && statusEl.value) ? statusEl.value.trim() : "";
+    return { search: search, status: status };
+  }
+
+  function buildDealsUrl(page) {
+    var params = getDealsQueryParams();
+    var url = dealsApiUrl + "?page=" + page + "&size=" + PAGE_SIZE;
+    if (params.search) url += "&search=" + encodeURIComponent(params.search);
+    if (params.status) url += "&status=" + encodeURIComponent(params.status);
+    return url;
+  }
+
   function loadDeals(page) {
     page = page === undefined ? 1 : page;
     currentPage = page;
     renderLoading();
-    const url = dealsApiUrl + "?page=" + page + "&size=" + PAGE_SIZE;
+    const url = buildDealsUrl(page);
     fetch(url, { credentials: "include" })
       .then(function (response) {
         if (!response.ok) throw new Error("Failed to fetch deals");
@@ -391,15 +438,19 @@
           })
           .filter(Boolean)
       : [];
-    const consultants = Array.isArray(detail.consultants)
-      ? detail.consultants
-          .map(function (c) {
-            return c && c.name != null ? c.name : String(c);
-          })
-          .filter(Boolean)
+    const consultantsList = Array.isArray(detail.consultants)
+      ? detail.consultants.filter(function (c) {
+          return c && (c.id != null || c.name != null);
+        })
       : [];
+    const consultants = consultantsList.map(function (c) {
+      return c && c.name != null ? c.name : String(c);
+    });
     const splits = Array.isArray(detail.splits) ? detail.splits : [];
     const contracts = Array.isArray(detail.contracts) ? detail.contracts : [];
+    const consultantApprovals = Array.isArray(detail.consultant_approvals)
+      ? detail.consultant_approvals
+      : [];
 
     const splitsHtml =
       splits.length > 0
@@ -429,6 +480,68 @@
           "</div>"
         : '<div class="text-muted text-xs">ثبت نشده</div>';
 
+    function findApprovalForConsultant(consultantId) {
+      return consultantApprovals.find(function (a) {
+        return Number(a.consultant) === Number(consultantId);
+      });
+    }
+    const approvalsTableRows =
+      consultantsList.length > 0
+        ? consultantsList
+            .map(function (c) {
+              const cId = c.id;
+              const cName = escapeHtml(c.name || "مشاور");
+              const approval = findApprovalForConsultant(cId);
+              const hasResponded =
+                approval &&
+                approval.status &&
+                String(approval.status).toLowerCase() !== "pending";
+              const statusDisplay = hasResponded
+                ? escapeHtml(
+                    approval.status_display || approval.status || "—"
+                  )
+                : '<span class="text-muted">در انتظار نظر</span>';
+              const amountStr =
+                approval &&
+                approval.suggested_amount != null &&
+                approval.suggested_amount > 0
+                  ? formatMoney(approval.suggested_amount) + " ریال"
+                  : "—";
+              const noteStr =
+                approval && approval.note && approval.note.trim()
+                  ? escapeHtml(approval.note.trim())
+                  : "—";
+              const dateStr =
+                approval && approval.responded_at
+                  ? formatCreatedDate(approval.responded_at)
+                  : "—";
+              return (
+                "<tr>" +
+                "<td>" + cName + "</td>" +
+                "<td>" + statusDisplay + "</td>" +
+                "<td class=\"num\">" + amountStr + "</td>" +
+                "<td class=\"consultant-note-cell\">" + noteStr + "</td>" +
+                "<td>" + dateStr + "</td>" +
+                "</tr>"
+              );
+            })
+            .join("")
+        : "";
+    const approvalsHtml =
+      consultantsList.length > 0
+        ? '<div class="consultant-approvals-table-wrap">' +
+          '<table class="consultant-approvals-table" aria-label="نظرات مشاوران">' +
+          "<thead><tr>" +
+          "<th scope=\"col\">نام مشاور</th>" +
+          "<th scope=\"col\">وضعیت</th>" +
+          "<th scope=\"col\">مبلغ پیشنهادی</th>" +
+          "<th scope=\"col\">توضیحات</th>" +
+          "<th scope=\"col\">تاریخ پاسخ</th>" +
+          "</tr></thead><tbody>" +
+          approvalsTableRows +
+          "</tbody></table></div>"
+        : '<p class="text-muted text-xs" style="margin:0;">هیچ مشاوری برای این معامله تعیین نشده است.</p>';
+
     const statusCode = detail.status_code || detail.status || "";
     const statusText = detail.status || "";
 
@@ -445,23 +558,76 @@
         "</div>";
     }
 
-    let actionsHtml =
-      (contracts.length
-        ? '<a href="' +
-          contractPdfUrl(contracts[contracts.length - 1].id) +
-          '" target="_blank" rel="noopener" class="detail-btn-pdf">دریافت PDF</a>'
-        : "") +
-      (detail.status_code === "pending" && isOfficeManager
-        ? '<a href="#" class="detail-btn-approve" id="dealApproveBtn">تایید معامله</a><a href="#" class="detail-btn-reject" id="dealRejectBtn">رد معامله</a>'
-        : "") +
-      (detail.status_code !== "approved" && detail.status_code !== "rejected"
-        ? '<a href="' + editDealUrl(detail.id) + '" class="detail-btn-edit">ویرایش مبایعه</a>'
-        : detail.status_code === "approved"
-          ? '<a href="#" class="detail-btn-edit disabled">ویرایش (غیرفعال برای معاملات تایید شده)</a>'
+    let actionsHtml = "";
+    if (isConsultant) {
+      actionsHtml =
+        (contracts.length
+          ? '<a href="' +
+            contractPdfUrl(contracts[contracts.length - 1].id) +
+            '" target="_blank" rel="noopener" class="detail-btn-pdf">دریافت PDF</a>'
           : "") +
-      (detail.status_code === "init"
-        ? '<a href="#" class="detail-btn-delete" id="dealDeleteBtn">حذف معامله</a>'
-        : "");
+        '<a href="' + dealAccountsUrl(detail.id) + '" class="detail-btn-edit">حساب‌های معامله</a>';
+    } else {
+      actionsHtml =
+        (contracts.length
+          ? '<a href="' +
+            contractPdfUrl(contracts[contracts.length - 1].id) +
+            '" target="_blank" rel="noopener" class="detail-btn-pdf">دریافت PDF</a>'
+          : "") +
+        (detail.status_code === "pending" && isOfficeManager
+          ? '<a href="#" class="detail-btn-approve" id="dealApproveBtn">تایید معامله</a><a href="#" class="detail-btn-reject" id="dealRejectBtn">رد معامله</a>'
+          : "") +
+        (detail.status_code !== "approved" && detail.status_code !== "rejected"
+          ? '<a href="' + editDealUrl(detail.id) + '" class="detail-btn-edit">ویرایش مبایعه</a>'
+          : detail.status_code === "approved"
+            ? '<a href="#" class="detail-btn-edit disabled">ویرایش (غیرفعال برای معاملات تایید شده)</a>'
+            : "") +
+        (detail.status_code === "init"
+          ? '<a href="#" class="detail-btn-delete" id="dealDeleteBtn">حذف معامله</a>'
+          : "");
+    }
+
+    const myApproval = detail.my_consultant_approval || null;
+    const alreadyResponded =
+      myApproval &&
+      myApproval.status &&
+      String(myApproval.status).toLowerCase() !== "pending";
+    const consultantActionHtml =
+      isConsultant && detail.status_code === "consultant_pending"
+        ? alreadyResponded
+          ? '<div class="detail-card" style="margin-top:10px;">' +
+            "<h3>نظر / تایید کمیسیون</h3>" +
+            '<p class="text-muted text-xs" style="margin:0 0 8px;">نظر شما ثبت شده است.</p>' +
+            '<div class="kv">' +
+            "<b>وضعیت</b><span>" +
+            escapeHtml(myApproval.status_display || myApproval.status || "") +
+            "</span>" +
+            (myApproval.suggested_amount != null
+              ? "<b>مبلغ پیشنهادی</b><span>" +
+                formatMoney(myApproval.suggested_amount) +
+                " ریال</span>"
+              : "") +
+            (myApproval.note
+              ? "<b>توضیحات</b><span style=\"white-space:pre-wrap;\">" + escapeHtml(myApproval.note) + "</span>"
+              : "") +
+            "</div></div>"
+          : '<div class="detail-card" style="margin-top:10px;">' +
+            "<h3>اعلام نظر / تایید کمیسیون</h3>" +
+            '<p class="text-muted text-xs" style="margin:0 0 10px;">می‌توانید سهم کمیسیون خود را تایید کنید یا پیشنهاد به مدیر ارسال کنید.</p>' +
+            '<div class="kv" style="gap:10px 12px;">' +
+            "<b>مبلغ پیشنهادی (ریال)</b>" +
+            '<span><input type="text" id="consultantSuggestedAmount" placeholder="مثلاً ۵٬۰۰۰٬۰۰۰ (اختیاری برای تایید)" style="width:200px; direction:ltr; text-align:left;"></span>' +
+            "</div>" +
+            '<div class="kv" style="gap:6px 12px; margin-top:10px; flex-direction:column; align-items:stretch;">' +
+            "<b>توضیحات (اختیاری)</b>" +
+            '<span><textarea id="consultantNoteInput" rows="3" placeholder="مشاور می‌تواند توضیحات یا یادداشت خود را در اینجا ثبت کند..." style="width:100%; min-width:200px; resize:vertical; padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.5);"></textarea></span>' +
+            "</div>" +
+            '<div class="detail-actions-bar" style="margin-top:10px;">' +
+            '<a href="#" class="detail-btn-approve" id="consultantApproveBtn">تایید و ثبت سهم من</a>' +
+            '<a href="#" class="detail-btn-reject" id="consultantSuggestBtn">ثبت پیشنهاد برای مدیر</a>' +
+            "</div>" +
+            "</div>"
+        : "";
 
     const rejectionRow =
       detail.status_code === "rejected" && detail.rejection_reason
@@ -549,11 +715,15 @@
       '<div class="detail-card"><h3>کمیسیون‌ها</h3>' +
       splitsHtml +
       "</div>" +
+      '<div class="detail-card detail-card--full-width"><h3>نظر مشاوران</h3>' +
+      approvalsHtml +
+      "</div>" +
       '<div class="detail-card"><h3>قراردادها</h3>' +
       contractsHtml +
       "</div>" +
       "</div>" +
       descriptionBlock +
+      consultantActionHtml +
       rejectWrapHtml +
       '<div class="detail-actions-bar">' +
       actionsHtml +
@@ -648,6 +818,78 @@
           });
       });
     }
+
+    const consultantApproveBtn = getEl("consultantApproveBtn");
+    if (consultantApproveBtn) {
+      consultantApproveBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (!confirm("آیا سهم کمیسیون خود را تایید می‌کنید؟")) return;
+        const amountInput = getEl("consultantSuggestedAmount");
+        const noteInput = getEl("consultantNoteInput");
+        const amount = amountInput ? parseMoneyInput(amountInput.value) : 0;
+        const note = noteInput ? noteInput.value.trim() : "";
+        const payload = { status: "approved" };
+        if (note) payload.note = note;
+        if (amount > 0) payload.suggested_amount = amount;
+        fetch(consultantApprovalUrl(detail.id), {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": getCsrfToken(),
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        })
+          .then(function (response) {
+            return response.json().catch(function () { return {}; }).then(function (data) {
+              if (!response.ok) throw new Error(data.message || "ثبت تایید انجام نشد.");
+              closeDealModal();
+              loadDeals(currentPage);
+            });
+          })
+          .catch(function (err) {
+            alert(err.message || "خطا در ثبت تایید");
+          });
+      });
+    }
+
+    const consultantSuggestBtn = getEl("consultantSuggestBtn");
+    if (consultantSuggestBtn) {
+      consultantSuggestBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        const amountInput = getEl("consultantSuggestedAmount");
+        const noteInput = getEl("consultantNoteInput");
+        const amount = amountInput ? parseMoneyInput(amountInput.value) : 0;
+        const note = noteInput ? noteInput.value.trim() : "";
+        if (!amount || amount <= 0) {
+          alert("لطفاً مبلغ پیشنهادی را وارد کنید.");
+          return;
+        }
+        fetch(consultantApprovalUrl(detail.id), {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": getCsrfToken(),
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            status: "review",
+            suggested_amount: amount,
+            note: note,
+          }),
+        })
+          .then(function (response) {
+            return response.json().catch(function () { return {}; }).then(function (data) {
+              if (!response.ok) throw new Error(data.message || "ثبت پیشنهاد انجام نشد.");
+              closeDealModal();
+              loadDeals(currentPage);
+            });
+          })
+          .catch(function (err) {
+            alert(err.message || "خطا در ثبت پیشنهاد");
+          });
+      });
+    }
   }
 
   function bindModalEvents() {
@@ -664,9 +906,37 @@
     });
   }
 
+  function initDealsFilters() {
+    var applyBtn = getEl("deals-filter-apply");
+    var statusSelect = getEl("deals-status-filter");
+    var searchInput = getEl("deals-search-input");
+    if (applyBtn) {
+      applyBtn.addEventListener("click", function () {
+        currentPage = 1;
+        loadDeals(1);
+      });
+    }
+    if (statusSelect) {
+      statusSelect.addEventListener("change", function () {
+        currentPage = 1;
+        loadDeals(1);
+      });
+    }
+    if (searchInput) {
+      searchInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          currentPage = 1;
+          loadDeals(1);
+        }
+      });
+    }
+  }
+
   function init() {
     bindDropdownClose();
     bindModalEvents();
+    initDealsFilters();
     loadDeals();
   }
 

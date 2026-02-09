@@ -7,6 +7,7 @@ from .models import (
     Client,
     CommissionSplit,
     DealClientCommission,
+    DealConsultantApproval,
     DealContract,
     DealProperty,
     Deals,
@@ -77,6 +78,8 @@ class DealsListSerializer(serializers.ModelSerializer):
     type = TransactionTypeSerializer()
     latest_contract_id = serializers.SerializerMethodField()
     creator = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    pending_my_approval = serializers.SerializerMethodField()
 
     def get_creator(self, obj):
         if not obj.created_by:
@@ -85,6 +88,24 @@ class DealsListSerializer(serializers.ModelSerializer):
         name = (user.get_full_name() or "").strip()
         return name or user.username
 
+    def get_pending_my_approval(self, obj):
+        """برای مشاور: True اگر معامله در انتظار تایید مشاور و نظر این مشاور هنوز ثبت نشده."""
+        request = self.context.get("request")
+        if not request or not getattr(request.user, "is_consultant", False):
+            return False
+        if obj.status != "consultant_pending":
+            return False
+        consultant = getattr(request.user, "consultant_profile", None)
+        if not consultant:
+            return False
+        approval = DealConsultantApproval.objects.filter(
+            deal=obj, consultant=consultant
+        ).first()
+        return (
+            approval is not None
+            and approval.status == DealConsultantApproval.ApprovalStatus.PENDING
+        )
+
     class Meta:
         model = Deals
         fields = [
@@ -92,12 +113,14 @@ class DealsListSerializer(serializers.ModelSerializer):
             "title",
             "type",
             "status",
+            "status_display",
             "agreement_date",
             "office_date",
             "date",
             "created_at",
             "latest_contract_id",
             "creator",
+            "pending_my_approval",
         ]
 
     def get_latest_contract_id(self, obj):
@@ -211,7 +234,10 @@ class DealsSerializer(serializers.ModelSerializer):
         new_status = validated_data.pop("status", None)
 
         if new_status is not None:
-            if instance.status == "init" and new_status == "pending":
+            if new_status == "pending" and instance.status in (
+                "init",
+                "consultant_pending",
+            ):
                 instance.status = new_status
             elif new_status != instance.status and new_status != "pending":
                 instance.status = new_status
@@ -324,6 +350,24 @@ class CommissionSplitDetailSerializer(serializers.ModelSerializer):
         return obj.consultant.name if obj.consultant else None
 
 
+class DealConsultantApprovalSerializer(serializers.ModelSerializer):
+    consultant_name = serializers.CharField(source="consultant.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = DealConsultantApproval
+        fields = [
+            "id",
+            "consultant",
+            "consultant_name",
+            "status",
+            "status_display",
+            "suggested_amount",
+            "note",
+            "responded_at",
+        ]
+
+
 class DealContractSerializer(serializers.ModelSerializer):
     template_title = serializers.CharField(source="template.title", read_only=True)
 
@@ -369,6 +413,8 @@ class DealDetailSerializer(serializers.ModelSerializer):
     splits = CommissionSplitDetailSerializer(many=True, read_only=True)
     client_commissions = DealClientCommissionSerializer(many=True, read_only=True)
     contracts = DealContractSerializer(many=True, read_only=True)
+    consultant_approvals = DealConsultantApprovalSerializer(many=True, read_only=True)
+    my_consultant_approval = serializers.SerializerMethodField()
 
     status = serializers.CharField(source="get_status_display", read_only=True)
     status_code = serializers.CharField(source="status", read_only=True)
@@ -381,6 +427,16 @@ class DealDetailSerializer(serializers.ModelSerializer):
         name = (user.get_full_name() or "").strip()
         return name or user.username
 
+    def get_my_consultant_approval(self, obj):
+        request = self.context.get("request")
+        if not request or not getattr(request.user, "consultant_profile", None):
+            return None
+        consultant = request.user.consultant_profile
+        approval = obj.consultant_approvals.filter(consultant=consultant).first()
+        if not approval:
+            return None
+        return DealConsultantApprovalSerializer(approval).data
+
     class Meta:
         model = Deals
         fields = [
@@ -388,6 +444,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
             "title",
             "status",
             "status_code",
+            "my_consultant_approval",
             "type",
             "amount",
             "agreement_date",
@@ -408,5 +465,6 @@ class DealDetailSerializer(serializers.ModelSerializer):
             "rejection_reason",
             "splits",
             "client_commissions",
+            "consultant_approvals",
             "contracts",
         ]

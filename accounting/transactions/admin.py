@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     Client,
     CommissionSplit,
+    DealConsultantApproval,
     ContractTemplate,
     DealClientCommission,
     DealContract,
@@ -76,6 +77,14 @@ class CommissionSplitAdmin(admin.ModelAdmin):
     list_filter = ("role",)
     search_fields = ("deal__title",)
     ordering = ("-deal__date",)
+
+
+@admin.register(DealConsultantApproval)
+class DealConsultantApprovalAdmin(admin.ModelAdmin):
+    list_display = ("deal", "consultant", "status", "suggested_amount", "responded_at")
+    list_filter = ("status",)
+    search_fields = ("deal__title", "consultant__name")
+    ordering = ("-created_at",)
 
 
 @admin.register(ContractTemplate)

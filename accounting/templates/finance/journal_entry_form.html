@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}ثبت سند روزنامه — سامانه حسابداری املاک{% endblock %}
+{% block body_class %}journal-form-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    .journal-form-page .shell-content { align-items: flex-start; padding-top: 1.5rem; padding-bottom: 3rem; }
+    .journal-header { margin-bottom: 1.5rem; }
+    .journal-back { font-size: 0.9rem; color: var(--color-text-muted); text-decoration: none; }
+    .journal-back:hover { color: var(--color-accent); }
+    .journal-title { margin: 0.5rem 0 0; font-size: 1.4rem; font-family: var(--font-title); }
+    .form-card { background: color-mix(in srgb, var(--color-surface-alt) 60%, transparent); border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 20px; padding: 1.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--color-text-muted); }
+    .form-control { width: 100%; max-width: 400px; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.35); background: var(--color-surface); color: var(--color-text); }
+    .journal-rows { overflow-x: auto; margin: 1rem 0; }
+    .journal-rows table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .journal-rows th, .journal-rows td { padding: 8px 10px; text-align: right; border: 1px solid rgba(148, 163, 184, 0.2); }
+    .journal-rows th { background: rgba(148, 163, 184, 0.1); color: var(--color-text-muted); }
+    .journal-rows select { width: 100%; min-width: 180px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .journal-rows input { width: 100%; min-width: 100px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .journal-rows .row-del { padding: 4px 10px; color: #b91c1c; cursor: pointer; font-size: 12px; }
+    .btn-submit { padding: 10px 24px; border-radius: 12px; border: none; background: var(--color-accent); color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .btn-submit:hover { opacity: 0.9; }
+    .btn-add-row { padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.5); background: transparent; color: var(--color-text); cursor: pointer; font-size: 13px; margin-bottom: 1rem; }
+    .btn-add-row:hover { border-color: var(--color-accent); color: var(--color-accent); }
+    .errorlist { color: #b91c1c; font-size: 13px; margin: 0.5rem 0 0; list-style: none; padding: 0; }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <div class="journal-header">
+        <a class="journal-back"
+           href="{% url 'finance:accounting-documents-list' %}">← بازگشت به اسناد حسابداری</a>
+        <h1 class="journal-title">ثبت سند روزنامه دستی</h1>
+        <p style="margin: 0.25rem 0 0;
+                  font-size: 14px;
+                  color: var(--color-text-muted)">جمع بدهکار باید برابر جمع بستانکار باشد.</p>
+      </div>
+      <form method="post" class="form-card" id="journalForm">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <ul class="errorlist">
+            {{ form.non_field_errors }}
+          </ul>
+        {% endif %}
+        <div class="form-group">
+          <label for="id_date">تاریخ سند *</label>
+          <input type="date"
+                 name="date"
+                 id="id_date"
+                 class="form-control"
+                 value="{{ form.date.value|default:'' }}"
+                 required>
+        </div>
+        <div class="form-group">
+          <label for="id_description">شرح سند</label>
+          <textarea name="description"
+                    id="id_description"
+                    class="form-control"
+                    rows="2"
+                    placeholder="شرح کلی سند">{{ form.description.value|default:'' }}</textarea>
+        </div>
+        <div class="journal-rows">
+          <button type="button" class="btn-add-row" id="addRow">+ افزودن ردیف</button>
+          <table>
+            <thead>
+              <tr>
+                <th>حساب</th>
+                <th>بدهکار (ریال)</th>
+                <th>بستانکار (ریال)</th>
+                <th>شرح ردیف</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody">
+              {% for row in form.get_rows %}
+                <tr class="journal-row">
+                  <td>
+                    <select name="account_id_{{ forloop.counter0 }}"
+                            class="account-select"
+                            required>
+                      <option value="">انتخاب حساب</option>
+                      {% for acc in accounts %}
+                        <option value="{{ acc.id }}"
+                                {% if row.account_id and acc.id|stringformat:"i" == row.account_id %}selected{% endif %}>
+                          {{ acc.code }} — {{ acc.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td>
+                    <input type="text"
+                           name="debit_{{ forloop.counter0 }}"
+                           placeholder="0"
+                           value="{{ row.debit }}"
+                           inputmode="decimal">
+                  </td>
+                  <td>
+                    <input type="text"
+                           name="credit_{{ forloop.counter0 }}"
+                           placeholder="0"
+                           value="{{ row.credit }}"
+                           inputmode="decimal">
+                  </td>
+                  <td>
+                    <input type="text"
+                           name="row_description_{{ forloop.counter0 }}"
+                           placeholder="شرح"
+                           value="{{ row.description }}">
+                  </td>
+                  <td>
+                    <button type="button" class="row-del" aria-label="حذف ردیف">حذف</button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="form-group">
+          <button type="submit" class="btn-submit">ثبت سند</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    (function() {
+      const rowsBody = document.getElementById('rowsBody');
+      const addRow = document.getElementById('addRow');
+      let rowIndex = rowsBody.querySelectorAll('tr').length;
+
+      function getAccountOptionsHtml() {
+        let opts = '<option value="">انتخاب حساب</option>';
+        {% for acc in accounts %}opts += '<option value="{{ acc.id }}">{{ acc.code }} — {{ acc.name }}</option>';{% endfor %}
+        return opts;
+      }
+
+      function addNewRow() {
+        const tr = document.createElement('tr');
+        tr.className = 'journal-row';
+        tr.innerHTML =
+          '<td><select name="account_id_' + rowIndex + '" class="account-select">' + getAccountOptionsHtml() + '</select></td>' +
+          '<td><input type="text" name="debit_' + rowIndex + '" placeholder="0" inputmode="decimal"></td>' +
+          '<td><input type="text" name="credit_' + rowIndex + '" placeholder="0" inputmode="decimal"></td>' +
+          '<td><input type="text" name="row_description_' + rowIndex + '" placeholder="شرح"></td>' +
+          '<td><button type="button" class="row-del" aria-label="حذف ردیف">حذف</button></td>';
+        rowsBody.appendChild(tr);
+        rowIndex++;
+        bindDelButtons();
+      }
+
+      function bindDelButtons() {
+        rowsBody.querySelectorAll('.row-del').forEach(function(btn) {
+          if (btn.dataset.bound) return;
+          btn.dataset.bound = '1';
+          btn.addEventListener('click', function() {
+            const tr = this.closest('tr');
+            if (rowsBody.querySelectorAll('tr').length > 1) tr.remove();
+          });
+        });
+      }
+
+      addRow.addEventListener('click', addNewRow);
+      bindDelButtons();
+    })();
+  </script>
+{% endblock %}

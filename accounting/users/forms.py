@@ -118,6 +118,34 @@ class ClientForm(forms.ModelForm):
         }
 
 
+class ConsultantLoginForm(forms.Form):
+    """فعال‌سازی ورود برای مشاور: نام کاربری و رمز عبور."""
+
+    username = forms.CharField(
+        max_length=150,
+        label="نام کاربری",
+        widget=forms.TextInput(
+            attrs={"class": "profile-input", "autocomplete": "username"}
+        ),
+    )
+    password = forms.CharField(
+        label="رمز عبور",
+        widget=forms.PasswordInput(
+            attrs={"class": "profile-input", "autocomplete": "new-password"}
+        ),
+        min_length=6,
+    )
+
+    def clean_username(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        username = self.cleaned_data.get("username")
+        if username and User.objects.filter(username=username).exists():
+            raise forms.ValidationError("این نام کاربری قبلاً استفاده شده است.")
+        return username
+
+
 class ConsultantForm(forms.ModelForm):
     """
     فرم مشاور: حساب‌ها به صورت خودکار از طریق finance.utils مدیریت می‌شوند.

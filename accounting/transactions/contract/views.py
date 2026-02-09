@@ -419,6 +419,9 @@ def contract_pdf_view(request, pk):
 
 @login_required
 def create_deal_view(request):
+    if getattr(request.user, "is_consultant", False):
+        messages.info(request, "ثبت مبایعه‌نامه فقط برای پرسنل دفتر امکان‌پذیر است.")
+        return redirect("dashboard")
 
     if not getattr(request.user, "office", None):
         messages.error(

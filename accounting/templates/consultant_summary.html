@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% load finance_tags %}
+{% block title %}خلاصه کمیسیون و معاملات من — سامانه حسابداری املاک{% endblock %}
+{% block body_class %}dashboard-page consultant-summary-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    .consultant-summary-page .shell-content { padding-top: 1rem; padding-bottom: 2rem; }
+    .consultant-summary-back { display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--color-text-muted); text-decoration: none; }
+    .consultant-summary-back:hover { color: var(--color-accent); }
+    .consultant-summary-section { margin-bottom: 1.5rem; }
+    .consultant-summary-section h1 { font-size: 1.25rem; margin: 0 0 0.75rem; color: var(--color-text); }
+    .consultant-summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .consultant-summary-table th, .consultant-summary-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+    .consultant-summary-table th { color: var(--color-text-muted); font-weight: 600; }
+    .consultant-summary-table .num { font-variant-numeric: tabular-nums; direction: ltr; }
+    .consultant-summary-table .link-deal { color: var(--color-accent); text-decoration: none; }
+    .consultant-summary-table .link-deal:hover { text-decoration: underline; }
+    .consultant-summary-table .clients-list { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .consultant-summary-table .status-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+    .consultant-summary-table .status-consultant_pending { background: rgba(251, 191, 36, 0.2); color: var(--color-text); }
+    .consultant-summary-table .status-approved { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .consultant-summary-table .status-pending { background: rgba(148, 163, 184, 0.2); color: var(--color-text-muted); }
+    @media (max-width: 768px) {
+      .consultant-summary-table { display: block; }
+      .consultant-summary-table thead { display: none; }
+      .consultant-summary-table tr { display: block; margin-bottom: 1rem; border: 1px solid rgba(148,163,184,0.25); border-radius: 12px; padding: 10px; }
+      .consultant-summary-table td { display: block; border: none; padding: 4px 0; }
+      .consultant-summary-table td::before { content: attr(data-label); font-weight: 600; color: var(--color-text-muted); margin-left: 8px; }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <a class="consultant-summary-back" href="{% url 'dashboard' %}">← بازگشت به داشبورد</a>
+      <section class="consultant-summary-section"
+               aria-labelledby="consultant-summary-heading">
+        <h1 id="consultant-summary-heading">خلاصه کمیسیون و معاملات من</h1>
+        {% if consultant_commissions_summary %}
+          <div class="ledger-table-wrapper" style="overflow-x: auto;">
+            <table class="consultant-summary-table">
+              <thead>
+                <tr>
+                  <th scope="col">معامله</th>
+                  <th scope="col">نوع</th>
+                  <th scope="col">وضعیت</th>
+                  <th scope="col">تاریخ</th>
+                  <th scope="col">مبلغ معامله</th>
+                  <th scope="col">سهم کمیسیون من</th>
+                  <th scope="col">مشتریان معامله</th>
+                  <th scope="col">دفتر حساب</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in consultant_commissions_summary %}
+                  <tr>
+                    <td data-label="معامله">{{ row.title }}</td>
+                    <td data-label="نوع">{{ row.type_name }}</td>
+                    <td data-label="وضعیت">
+                      <span class="status-badge status-{{ row.status|default:'' }}">{{ row.status_display }}</span>
+                    </td>
+                    <td data-label="تاریخ">{{ row.date|shamsi_date }}</td>
+                    <td data-label="مبلغ معامله" class="num">
+                      {% if row.amount %}
+                        {{ row.amount|floatformat:0|intcomma }} ریال
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td data-label="سهم کمیسیون من" class="num">
+                      {% if row.my_commission %}
+                        {{ row.my_commission|floatformat:0|intcomma }} ریال
+                        {% if row.my_commission_percentage %}({{ row.my_commission_percentage|floatformat:1 }}٪){% endif %}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td data-label="مشتریان" class="clients-list">
+                      {% if row.clients %}
+                        {{ row.clients|join:"، " }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td data-label="دفتر حساب">
+                      {% if row.has_ledger %}
+                        <a class="link-deal"
+                           href="{% url 'finance:deal-accounts' row.deal_id %}">دفتر حساب معامله</a>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">هیچ معامله‌ای برای شما ثبت نشده است.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

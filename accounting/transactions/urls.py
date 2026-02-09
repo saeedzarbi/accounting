@@ -3,6 +3,7 @@ from transactions.views import (
     ApproveDealView,
     ClientListByOfficeView,
     CommissionSplitBulkView,
+    ConsultantApprovalView,
     ConsultantListByOfficeView,
     ContractListView,
     CreateCommissionSplitView,
@@ -55,6 +56,11 @@ urlpatterns = [
         name="update-commission-split",
     ),
     path("<int:deal_id>/approve/", ApproveDealView.as_view(), name="approve_deal"),
+    path(
+        "<int:deal_id>/consultant-approval/",
+        ConsultantApprovalView.as_view(),
+        name="consultant-approval",
+    ),
     path("<int:deal_id>/reject/", RejectDealView.as_view(), name="reject_deal"),
     path("contract/", include("transactions.contract.urls")),
 ]

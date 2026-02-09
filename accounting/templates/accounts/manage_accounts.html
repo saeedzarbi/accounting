@@ -467,6 +467,7 @@
                   <td>{{ client.phone|default:"—" }}</td>
                   <td>
                     <div class="accounts-actions">
+                      <a class="btn-small" href="{% url 'client-account-detail' client.id %}">اطلاعات حساب</a>
                       <a class="btn-small" href="{% url 'edit-client' client.id %}">ویرایش</a>
                       <form method="post"
                             action="{% url 'delete-client' client.id %}"
@@ -531,6 +532,7 @@
                   <td>{{ consultant.account|default:"—" }}</td>
                   <td>
                     <div class="accounts-actions">
+                      <a class="btn-small" href="{% url 'consultant-account-detail' consultant.id %}">اطلاعات حساب</a>
                       <a class="btn-small" href="{% url 'edit-consultant' consultant.id %}">ویرایش</a>
                       <form method="post"
                             action="{% url 'delete-consultant' consultant.id %}"

@@ -5,6 +5,11 @@ from . import views
 
 urlpatterns = [
     path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
+    path(
+        "consultant-summary/",
+        views.ConsultantSummaryView.as_view(),
+        name="consultant-summary",
+    ),
     path("login/", views.LoginViewUI.as_view(), name="login"),
     path("profile/", views.ProfileView.as_view(), name="profile"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
@@ -28,5 +33,15 @@ urlpatterns = [
         "accounts/consultants/<int:consultant_id>/delete/",
         views.delete_consultant,
         name="delete-consultant",
+    ),
+    path(
+        "accounts/clients/<int:client_id>/account/",
+        views.client_account_detail,
+        name="client-account-detail",
+    ),
+    path(
+        "accounts/consultants/<int:consultant_id>/account/",
+        views.consultant_account_detail,
+        name="consultant-account-detail",
     ),
 ]

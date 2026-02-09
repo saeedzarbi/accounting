@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}ثبت سند پرداخت — سامانه حسابداری املاک{% endblock %}
+{% block body_class %}payment-form-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    .payment-form-page .shell-content { align-items: flex-start; padding-top: 1.5rem; padding-bottom: 3rem; }
+    .payment-header { margin-bottom: 1.5rem; }
+    .payment-back { font-size: 0.9rem; color: var(--color-text-muted); text-decoration: none; }
+    .payment-back:hover { color: var(--color-accent); }
+    .payment-title { margin: 0.5rem 0 0; font-size: 1.4rem; font-family: var(--font-title); }
+    .form-card { background: color-mix(in srgb, var(--color-surface-alt) 60%, transparent); border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 20px; padding: 1.5rem; max-width: 480px; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--color-text-muted); }
+    .form-control { width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.35); background: var(--color-surface); color: var(--color-text); }
+    .btn-submit { padding: 10px 24px; border-radius: 12px; border: none; background: var(--color-accent); color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .btn-submit:hover { opacity: 0.9; }
+    .errorlist { color: #b91c1c; font-size: 13px; margin: 0.5rem 0 0; list-style: none; padding: 0; }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <div class="payment-header">
+        <a class="payment-back"
+           href="{% url 'finance:accounting-documents-list' %}">← بازگشت به اسناد حسابداری</a>
+        <h1 class="payment-title">ثبت سند پرداخت</h1>
+        <p style="margin: 0.25rem 0 0;
+                  font-size: 14px;
+                  color: var(--color-text-muted)">پرداخت وجه از صندوق/بانک به طرف حساب.</p>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="form-card">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <ul class="errorlist">
+            {{ form.non_field_errors }}
+          </ul>
+        {% endif %}
+        {% for field in form %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">
+              {{ field.label }}
+              {% if field.field.required %}*{% endif %}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+              <ul class="errorlist">
+                {{ field.errors }}
+              </ul>
+            {% endif %}
+          </div>
+        {% endfor %}
+        <div class="form-group">
+          <button type="submit" class="btn-submit">ثبت سند پرداخت</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

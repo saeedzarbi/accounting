@@ -1,650 +1,383 @@
 {% extends "base.html" %}
 {% load static %}
 {% load humanize %}
-{% block title %}حساب‌های معامله #{{ deal.id }}{% endblock %}
+{% load finance_tags %}
+{% block title %}حساب‌های معامله — {{ deal.title|default:deal.id }}{% endblock %}
 {% block body_class %}deal-accounts-page{% endblock %}
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'css/deal_accounts.css' %}">
 {% endblock %}
 {% block content %}
-  <div class="page-card">
+  <div class="page-card deal-accounts-card">
     <div class="page-card-inner">
-      <div class="deal-accounts-header">
-        <div class="deal-accounts-header-top">
-          <a class="deal-accounts-back" href="{% url 'dashboard' %}">← داشبورد</a>
+      {% comment %} سربرگ و دکمه‌های اقدام {% endcomment %}
+      <header class="deal-accounts-hero">
+        <nav class="deal-accounts-nav">
+          <a class="deal-accounts-back" href="{% url 'dashboard' %}">
+            <span class="deal-accounts-back-icon" aria-hidden="true">←</span>
+            <span>داشبورد</span>
+          </a>
           <div class="deal-accounts-actions">
             <button type="button"
                     class="deal-detail-btn deal-detail-btn--ghost"
-                    id="openDealDetailModal">جزئیات معامله</button>
+                    id="openDealDetailModal"
+                    aria-label="مشاهده جزئیات معامله">جزئیات معامله</button>
             {% if deal_accounts_list %}
               <button type="button"
                       class="deal-detail-btn deal-detail-btn--primary"
-                      id="openRegisterPaymentModal">ثبت تراکنش</button>
+                      id="openRegisterPaymentModal"
+                      aria-label="ثبت تراکنش جدید">ثبت تراکنش</button>
             {% endif %}
           </div>
+        </nav>
+        <div class="deal-accounts-hero-title">
+          <h1 class="deal-accounts-title">{{ deal.title|default:"معامله" }} — حساب‌ها</h1>
+          <span class="deal-accounts-pill" aria-hidden="true">دفتر حساب</span>
         </div>
-        <div class="deal-accounts-title-row">
-          <h1 class="deal-accounts-title">حساب‌های معامله #{{ deal.id }}</h1>
-          <span class="deal-accounts-pill">دفتر حساب</span>
-        </div>
-        <p class="deal-accounts-subtitle">دفتر حساب معامله — بدهی/بستانکاری مشتریان، مشاوران و بنگاه.</p>
-      </div>
-      <div class="deal-summary-card deal-summary-card--primary">
-        <div class="deal-summary-item">
-          <span class="deal-summary-label">عنوان معامله</span>
-          <span class="deal-summary-value">{{ deal.title|default:"—" }}</span>
-        </div>
-        <div class="deal-summary-item">
-          <span class="deal-summary-label">نوع معامله</span>
-          <span class="deal-summary-value">{{ deal.type.name|default:"—" }}</span>
-        </div>
-        <div class="deal-summary-item">
-          <span class="deal-summary-label">تاریخ معامله</span>
-          <span class="deal-summary-value">{{ deal.date|default:"—" }}</span>
-        </div>
-        {% if client_receivable_balance %}
-          <div class="deal-summary-item">
-            <span class="deal-summary-label">بستانکاری از مشتریان</span>
-            <span class="deal-summary-value">{{ client_receivable_balance|floatformat:0|intcomma }} تومان</span>
-          </div>
-        {% endif %}
-      </div>
-      {% if summary_items %}
-        <div class="deal-summary-card deal-summary-card--secondary">
-          {% for s in summary_items %}
-            <div class="deal-summary-item">
-              <span class="deal-summary-label">{{ s.label }}</span>
-              <span class="deal-summary-value">{{ s.balance|floatformat:0|intcomma }} ریال</span>
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
+        <p class="deal-accounts-subtitle">بدهی و بستانکاری مشتریان، مشاوران و بنگاه در این معامله</p>
+      </header>
+      {% comment %} جدول دفتر حساب (سند کمیسیون) یا حالت خالی {% endcomment %}
       {% if transaction and ledger_rows %}
-        <div class="ledger-card" style="margin-bottom: 1rem;">
-          <div class="ledger-card-header">
-            <div>دفتر حساب — سند کمیسیون معامله</div>
-            <div class="ledger-legend">
-              <span class="ledger-legend-item ledger-legend-debit">بدهکار</span>
-              <span class="ledger-legend-item ledger-legend-credit">بستانکار</span>
-              <span class="ledger-legend-item ledger-legend-settled">تسویه‌شده</span>
+        <section class="deal-accounts-ledger-section" aria-labelledby="ledger-heading">
+          <div class="ledger-card">
+            <div class="ledger-card-header">
+              <h2 id="ledger-heading" class="ledger-card-title">دفتر حساب — سند کمیسیون معامله</h2>
+              <div class="ledger-legend" role="list">
+                <span class="ledger-legend-item ledger-legend-debit" role="listitem">بدهکار</span>
+                <span class="ledger-legend-item ledger-legend-credit" role="listitem">بستانکار</span>
+                <span class="ledger-legend-item ledger-legend-settled" role="listitem">تسویه‌شده</span>
+              </div>
             </div>
-          </div>
-          <div class="ledger-table-wrapper">
-            <table class="ledger-table">
-              <thead>
-                <tr>
-                  <th class="col-account">حساب</th>
-                  <th class="col-code">کد</th>
-                  <th class="col-desc">نوع حساب</th>
-                  <th class="col-counterpart">طرف مقابل (هم‌ارز)</th>
-                  <th class="col-debit">بدهکار</th>
-                  <th class="col-credit">بستانکار</th>
-                  <th class="col-settled">تسویه‌شده</th>
-                  <th class="col-remaining">باقی‌مانده</th>
-                  <th class="col-actions">تراکنش‌ها</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for e in ledger_rows %}
-                  <tr>
-                    <td class="col-account">{{ e.account_name }}</td>
-                    <td class="col-code">{{ e.account_code }}</td>
-                    <td class="col-desc">{{ e.account_kind|default:"—" }}</td>
-                    <td class="col-counterpart">{{ e.counterpart_label|default:"—" }}</td>
-                    <td class="col-debit">
-                      {% if e.debit %}{{ e.debit|floatformat:0|intcomma }}{% endif %}
-                    </td>
-                    <td class="col-credit">
-                      {% if e.credit %}{{ e.credit|floatformat:0|intcomma }}{% endif %}
-                    </td>
-                    <td class="col-settled">
-                      {% if e.settled_amount %}
-                        {{ e.settled_amount|floatformat:0|intcomma }}
-                      {% else %}
-                        ۰
-                      {% endif %}
-                    </td>
-                    <td class="col-remaining">
-                      {% if e.remaining_amount %}
-                        {{ e.remaining_amount|floatformat:0|intcomma }}
-                      {% else %}
-                        ۰
-                      {% endif %}
-                    </td>
-                    <td class="col-actions">
-                      {% if e.has_payments %}
-                        <button type="button"
-                                class="payments-badge"
-                                data-account-code="{{ e.account_code }}">مشاهده تراکنش‌ها</button>
-                      {% else %}
-                        <span class="deal-summary-label">—</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-                <tr class="total-row">
-                  <td colspan="4">جمع دفتر</td>
-                  <td class="col-debit">{{ total_debit|floatformat:0|intcomma }}</td>
-                  <td class="col-credit">{{ total_credit|floatformat:0|intcomma }}</td>
-                  <td colspan="3"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      {% else %}
-        <div class="empty-accounts-state">
-          <div class="icon">📋</div>
-          <p>برای این معامله هنوز سند حسابداری (کمیسیون) ثبت نشده است.</p>
-          <p style="margin-top: 8px; font-size: 13px;">
-            پس از تایید نهایی معامله توسط مدیر بنگاه، حساب‌های ذی‌نفعان (مشتریان، مشاوران، مدیر دفتر و …) به‌صورت خودکار ساخته و در این صفحه نمایش داده می‌شوند.
-          </p>
-        </div>
-      {% endif %}
-    </div>
-  </div>
-  <script id="payments-data" type="application/json">{{ payments_by_account_json|safe }}</script>
-  <script id="payment-url" type="application/json">{"url": "{% url 'finance:deal-account-payment' deal.id %}"}</script>
-  <script>
-    // مودال جزئیات معامله
-    (function () {
-      const overlay = document.getElementById("dealDetailModal");
-      const openBtn = document.getElementById("openDealDetailModal");
-      const closeBtn = document.getElementById("dealDetailModalClose");
-
-      function setModalOpen(open) {
-        if (!overlay) return;
-        overlay.style.display = open ? "flex" : "none";
-        overlay.setAttribute("aria-hidden", open ? "false" : "true");
-        document.body.style.overflow = open ? "hidden" : "";
-      }
-
-      if (openBtn && overlay) {
-        openBtn.addEventListener("click", function () {
-          setModalOpen(true);
-        });
-      }
-      if (closeBtn && overlay) {
-        closeBtn.addEventListener("click", function () {
-          setModalOpen(false);
-        });
-      }
-      if (overlay) {
-        overlay.addEventListener("click", function (e) {
-          if (e.target && e.target.id === "dealDetailModal") {
-            setModalOpen(false);
-          }
-        });
-      }
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-          setModalOpen(false);
-        }
-      });
-    })();
-
-    // مودال تراکنش‌های حساب
-    (function () {
-      const dataEl = document.getElementById("payments-data");
-      let paymentsByAccount = {};
-      if (dataEl && dataEl.textContent.trim()) {
-        try {
-          paymentsByAccount = JSON.parse(dataEl.textContent);
-        } catch (e) {
-          paymentsByAccount = {};
-        }
-      }
-
-      const overlay = document.getElementById("paymentsModal");
-      const closeBtn = document.getElementById("paymentsModalClose");
-      const bodyEl = document.getElementById("paymentsModalBody");
-      const titleEl = document.getElementById("paymentsModalTitle");
-
-      function setPaymentsModalOpen(open) {
-        if (!overlay) return;
-        overlay.style.display = open ? "flex" : "none";
-        overlay.setAttribute("aria-hidden", open ? "false" : "true");
-        document.body.style.overflow = open ? "hidden" : "";
-      }
-
-      function formatAmount(value) {
-        if (value == null) return "۰";
-        try {
-          return Number(value).toLocaleString("fa-IR");
-        } catch (e) {
-          return String(value);
-        }
-      }
-
-      function openPaymentsModal(accountCode, accountName) {
-        const items = paymentsByAccount[accountCode] || [];
-        titleEl.textContent = `تراکنش‌های حساب ${accountName || accountCode}`;
-
-        if (!items.length) {
-          bodyEl.innerHTML = `
-            <div class="empty-accounts-state">
-              <div class="icon">📄</div>
-              <p>هیچ تراکنشی برای این حساب ثبت نشده است.</p>
-            </div>
-          `;
-        } else {
-          bodyEl.innerHTML = `
             <div class="ledger-table-wrapper">
-              <table class="ledger-table">
+              <table class="ledger-table" role="table">
                 <thead>
                   <tr>
-                    <th>تاریخ</th>
-                    <th>نوع</th>
-                    <th>مبلغ (ریال)</th>
-                    <th>روش</th>
-                    <th>توضیحات</th>
-                    <th>رسید</th>
+                    <th scope="col" class="col-account">حساب</th>
+                    <th scope="col" class="col-code">کد</th>
+                    <th scope="col" class="col-desc">نوع حساب</th>
+                    <th scope="col" class="col-counterpart">طرف مقابل</th>
+                    <th scope="col" class="col-debit">بدهکار</th>
+                    <th scope="col" class="col-credit">بستانکار</th>
+                    <th scope="col" class="col-settled">تسویه‌شده</th>
+                    <th scope="col" class="col-remaining">باقی‌مانده</th>
+                    <th scope="col" class="col-actions">تراکنش‌ها</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${items
-                    .map(
-                      (p) => `
-                        <tr>
-                          <td>${p.date || "—"}</td>
-                          <td>${p.direction || "—"}</td>
-                          <td class="col-credit">${formatAmount(p.amount)}</td>
-                          <td>${p.method || "—"}</td>
-                          <td>${p.description || "—"}</td>
-                          <td>${
-                            p.receipt_url
-                              ? '<button type="button" class="payments-badge receipt-open-btn" data-receipt-url="' + (p.receipt_url || "").replace(/"/g, "&quot;") + '">مشاهده رسید</button>'
-                              : "—"
-                          }</td>
-                        </tr>
-                      `
-                    )
-                    .join("")}
+                  {% for e in ledger_rows %}
+                    <tr class="ledger-row">
+                      <td class="col-account" data-label="حساب">{{ e.account_name }}</td>
+                      <td class="col-code" data-label="کد">{{ e.account_code }}</td>
+                      <td class="col-desc" data-label="نوع حساب">{{ e.account_kind|default:"—" }}</td>
+                      <td class="col-counterpart" data-label="طرف مقابل">{{ e.counterpart_label|default:"—" }}</td>
+                      <td class="col-debit" data-label="بدهکار">
+                        {% if e.debit %}
+                          {{ e.debit|floatformat:0|intcomma }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td class="col-credit" data-label="بستانکار">
+                        {% if e.credit %}
+                          {{ e.credit|floatformat:0|intcomma }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td class="col-settled" data-label="تسویه‌شده">
+                        {% if e.settled_amount %}
+                          {{ e.settled_amount|floatformat:0|intcomma }}
+                        {% else %}
+                          ۰
+                        {% endif %}
+                      </td>
+                      <td class="col-remaining" data-label="باقی‌مانده">
+                        {% if e.remaining_amount %}
+                          {{ e.remaining_amount|floatformat:0|intcomma }}
+                        {% else %}
+                          ۰
+                        {% endif %}
+                      </td>
+                      <td class="col-actions" data-label="">
+                        {% if e.has_payments %}
+                          <button type="button"
+                                  class="payments-badge"
+                                  data-account-code="{{ e.account_code }}">مشاهده تراکنش‌ها</button>
+                        {% else %}
+                          <span class="ledger-no-payments">—</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
                 </tbody>
+                <tfoot>
+                  <tr class="total-row">
+                    <td colspan="4" class="total-row-label">جمع دفتر</td>
+                    <td class="col-debit">{{ total_debit|floatformat:0|intcomma }}</td>
+                    <td class="col-credit">{{ total_credit|floatformat:0|intcomma }}</td>
+                    <td colspan="3" class="total-row-spacer" aria-hidden="true"></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
-          `;
-        }
-
-        setPaymentsModalOpen(true);
-      }
-
-      var receiptModalBlobUrl = null;
-      function openReceiptModal(url) {
-        const receiptOverlay = document.getElementById("receiptModal");
-        const body = document.getElementById("receiptModalBody");
-        const loading = document.getElementById("receiptModalLoading");
-        const img = document.getElementById("receiptModalImage");
-        const fallback = document.getElementById("receiptModalFallback");
-        const openNewLink = document.getElementById("receiptModalOpenNew");
-        if (!receiptOverlay || !url) return;
-        if (receiptModalBlobUrl) {
-          URL.revokeObjectURL(receiptModalBlobUrl);
-          receiptModalBlobUrl = null;
-        }
-        loading.style.display = "block";
-        if (img) { img.style.display = "none"; img.removeAttribute("src"); }
-        if (fallback) fallback.style.display = "none";
-        receiptOverlay.style.display = "flex";
-        receiptOverlay.setAttribute("aria-hidden", "false");
-        document.body.style.overflow = "hidden";
-        fetch(url, { credentials: "include" })
-          .then(function (r) {
-            if (!r.ok) throw new Error("خطا در بارگذاری");
-            var ct = (r.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
-            return r.blob().then(function (blob) {
-              return { blob: blob, contentType: ct };
-            });
-          })
-          .then(function (_) {
-            var blob = _.blob, contentType = _.contentType;
-            if (contentType.indexOf("image/") === 0 && img) {
-              receiptModalBlobUrl = URL.createObjectURL(blob);
-              img.src = receiptModalBlobUrl;
-              img.style.display = "block";
-              loading.style.display = "none";
-            } else {
-              if (openNewLink) {
-                openNewLink.href = url;
-                openNewLink.textContent = "باز کردن رسید در تب جدید";
-              }
-              if (fallback) fallback.style.display = "block";
-              loading.style.display = "none";
-            }
-          })
-          .catch(function () {
-            if (openNewLink) {
-              openNewLink.href = url;
-              openNewLink.textContent = "باز کردن رسید در تب جدید";
-            }
-            if (fallback) fallback.style.display = "block";
-            loading.style.display = "none";
-          });
-      }
-      function closeReceiptModal() {
-        const receiptOverlay = document.getElementById("receiptModal");
-        const img = document.getElementById("receiptModalImage");
-        const fallback = document.getElementById("receiptModalFallback");
-        const loading = document.getElementById("receiptModalLoading");
-        if (receiptOverlay) {
-          receiptOverlay.style.display = "none";
-          receiptOverlay.setAttribute("aria-hidden", "true");
-          document.body.style.overflow = "";
-        }
-        if (receiptModalBlobUrl) {
-          URL.revokeObjectURL(receiptModalBlobUrl);
-          receiptModalBlobUrl = null;
-        }
-        if (img) { img.removeAttribute("src"); img.style.display = "none"; }
-        if (fallback) fallback.style.display = "none";
-        if (loading) loading.style.display = "block";
-      }
-      bodyEl.addEventListener("click", function (e) {
-        const btn = e.target && e.target.closest && e.target.closest(".receipt-open-btn");
-        if (btn && btn.getAttribute("data-receipt-url")) {
-          e.preventDefault();
-          openReceiptModal(btn.getAttribute("data-receipt-url"));
-        }
-      });
-      (function () {
-        const receiptOverlay = document.getElementById("receiptModal");
-        const receiptClose = document.getElementById("receiptModalClose");
-        if (receiptClose) receiptClose.addEventListener("click", closeReceiptModal);
-        if (receiptOverlay) {
-          receiptOverlay.addEventListener("click", function (ev) {
-            if (ev.target && ev.target.id === "receiptModal") closeReceiptModal();
-          });
-        }
-        document.addEventListener("keydown", function (e) {
-          if (e.key === "Escape" && receiptOverlay && receiptOverlay.getAttribute("aria-hidden") === "false") {
-            closeReceiptModal();
-          }
-        });
-      })();
-
-      document.querySelectorAll(".payments-badge").forEach((btn) => {
-        btn.addEventListener("click", function () {
-          const code = this.getAttribute("data-account-code");
-          const row = this.closest("tr");
-          const nameCell = row ? row.querySelector(".col-account") : null;
-          const name = nameCell ? nameCell.textContent.trim() : "";
-          openPaymentsModal(code, name);
-        });
-      });
-
-      if (closeBtn && overlay) {
-        closeBtn.addEventListener("click", function () {
-          setPaymentsModalOpen(false);
-        });
-      }
-      if (overlay) {
-        overlay.addEventListener("click", function (e) {
-          if (e.target && e.target.id === "paymentsModal") {
-            setPaymentsModalOpen(false);
-          }
-        });
-      }
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-          setPaymentsModalOpen(false);
-        }
-      });
-    })();
-
-    (function () {
-      const overlay = document.getElementById("registerPaymentModal");
-      const openBtn = document.getElementById("openRegisterPaymentModal");
-      const closeBtn = document.getElementById("registerPaymentModalClose");
-      const form = document.getElementById("registerPaymentForm");
-      const messageEl = document.getElementById("registerPaymentMessage");
-      const submitBtn = document.getElementById("registerPaymentSubmit");
-      if (!overlay || !form) return;
-
-      let paymentUrl = "";
-      try {
-        const urlEl = document.getElementById("payment-url");
-        if (urlEl && urlEl.textContent) {
-          paymentUrl = JSON.parse(urlEl.textContent).url;
-        }
-      } catch (e) {}
-
-      function setRegisterPaymentModalOpen(open) {
-        overlay.style.display = open ? "flex" : "none";
-        overlay.setAttribute("aria-hidden", open ? "false" : "true");
-        document.body.style.overflow = open ? "hidden" : "";
-        if (!open) {
-          messageEl.textContent = "";
-          messageEl.className = "form-message";
-        }
-      }
-
-      if (openBtn) {
-        openBtn.addEventListener("click", function () {
-          setRegisterPaymentModalOpen(true);
-        });
-      }
-      if (closeBtn) {
-        closeBtn.addEventListener("click", function () {
-          setRegisterPaymentModalOpen(false);
-        });
-      }
-      overlay.addEventListener("click", function (e) {
-        if (e.target && e.target.id === "registerPaymentModal") {
-          setRegisterPaymentModalOpen(false);
-        }
-      });
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && overlay.getAttribute("aria-hidden") === "false") {
-          setRegisterPaymentModalOpen(false);
-        }
-      });
-
-      var amountInput = document.getElementById("paymentAmount");
-      if (amountInput) {
-        function toEnDigits(str) {
-          var fa = "۰۱۲۳۴۵۶۷۸۹";
-          var out = "";
-          for (var i = 0; i < (str || "").length; i++) {
-            var idx = fa.indexOf(str[i]);
-            out += idx >= 0 ? idx : str[i];
-          }
-          return out;
-        }
-        function getRawAmount() {
-          var v = (amountInput.value || "").replace(/,|٬|،/g, "");
-          var en = toEnDigits(v);
-          return en.replace(/\D/g, "");
-        }
-        function formatAmountInput() {
-          var raw = getRawAmount();
-          if (!raw) {
-            amountInput.value = "";
-            amountInput.setAttribute("data-raw", "");
-            return;
-          }
-          var n = parseInt(raw, 10);
-          if (isNaN(n)) {
-            amountInput.setAttribute("data-raw", "");
-            return;
-          }
-          amountInput.setAttribute("data-raw", String(n));
-          amountInput.value = n.toLocaleString("fa-IR");
-        }
-        function allowOnlyDigits(e) {
-          var k = e.key;
-          if (k === "Backspace" || k === "Tab" || k === "Enter") return;
-          if (e.ctrlKey || e.metaKey) return;
-          if (/[0-9۰-۹]/.test(k)) return;
-          e.preventDefault();
-        }
-        amountInput.addEventListener("blur", formatAmountInput);
-        amountInput.addEventListener("keydown", allowOnlyDigits);
-        amountInput.addEventListener("input", function () {
-          var raw = getRawAmount();
-          amountInput.setAttribute("data-raw", raw ? String(parseInt(raw, 10)) : "");
-        });
-      }
-
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        if (!paymentUrl) {
-          messageEl.textContent = "آدرس ثبت تراکنش یافت نشد.";
-          messageEl.className = "form-message error";
-          return;
-        }
-        var fd = new FormData(form);
-        var rawAmount = amountInput ? (amountInput.getAttribute("data-raw") || amountInput.value) : fd.get("amount");
-        if (typeof rawAmount === "string") {
-          rawAmount = rawAmount.replace(/,|٬|،/g, "").replace(/[۰-۹]/g, function (c) {
-            return "۰۱۲۳۴۵۶۷۸۹".indexOf(c);
-          }).replace(/\D/g, "");
-        }
-        if (!rawAmount || parseInt(rawAmount, 10) <= 0) {
-          messageEl.textContent = "مبلغ را به درستی وارد کنید.";
-          messageEl.className = "form-message error";
-          return;
-        }
-        fd.set("amount", rawAmount);
-        var csrf = fd.get("csrfmiddlewaretoken") || "";
-        messageEl.textContent = "در حال ثبت...";
-        messageEl.className = "form-message";
-        submitBtn.disabled = true;
-        fetch(paymentUrl, {
-          method: "POST",
-          headers: {
-            "X-CSRFToken": csrf,
-            "Accept": "application/json",
-          },
-          body: fd,
-        })
-          .then(function (res) {
-            return res.json().then(function (data) {
-              if (res.ok && data.success) {
-                messageEl.textContent = data.message || "ثبت شد.";
-                messageEl.className = "form-message success";
-                setTimeout(function () {
-                  window.location.reload();
-                }, 800);
-              } else {
-                messageEl.textContent = data.message || "خطا در ثبت تراکنش.";
-                messageEl.className = "form-message error";
-                submitBtn.disabled = false;
-              }
-            });
-          })
-          .catch(function () {
-            messageEl.textContent = "خطا در ارتباط با سرور.";
-            messageEl.className = "form-message error";
-            submitBtn.disabled = false;
-          });
-      });
-    })();
+          </div>
+        </section>
+      {% else %}
+        <section class="deal-accounts-empty-section" aria-labelledby="empty-heading">
+          <div class="empty-accounts-state">
+            <div class="empty-accounts-state-icon" aria-hidden="true">📋</div>
+            <h2 id="empty-heading" class="empty-accounts-state-title">سند حسابداری ثبت نشده</h2>
+            <p class="empty-accounts-state-desc">برای این معامله هنوز سند حسابداری (کمیسیون) ثبت نشده است.</p>
+            <p class="empty-accounts-state-hint">
+              پس از تایید نهایی معامله توسط مدیر بنگاه، حساب‌های ذی‌نفعان به‌صورت خودکار ساخته و در این صفحه نمایش داده می‌شوند.
+            </p>
+          </div>
+        </section>
+      {% endif %}
+      {% if pending_payments %}
+        <section class="deal-accounts-pending-section"
+                 aria-labelledby="pending-heading"
+                 style="margin-top:1.5rem">
+          <h2 id="pending-heading" class="ledger-card-title">تراکنش‌های در انتظار تایید</h2>
+          <p class="payment-modal-hint" style="margin-bottom:0.75rem;">
+            {% if can_approve_pending %}
+              این تراکنش‌ها توسط مشاور پیشنهاد شده‌اند. با «تایید» تراکنش در دفتر اعمال می‌شود؛ با «رد» پیشنهاد لغو می‌شود.
+            {% else %}
+              تراکنش‌های پیشنهادی شما پس از تایید اپراتور یا مدیر بنگاه در دفتر اعمال می‌شوند.
+            {% endif %}
+          </p>
+          <div class="ledger-table-wrapper">
+            <table class="ledger-table pending-table" role="table">
+              <thead>
+                <tr>
+                  <th scope="col">حساب</th>
+                  <th scope="col">نوع</th>
+                  <th scope="col">مبلغ (ریال)</th>
+                  <th scope="col">تاریخ</th>
+                  <th scope="col">ثبت‌کننده</th>
+                  <th scope="col">وضعیت</th>
+                  {% if can_approve_pending %}<th scope="col">عملیات</th>{% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in pending_payments %}
+                  <tr class="pending-row" data-pending-id="{{ p.id }}">
+                    <td data-label="حساب">{{ p.account.name|default:"—" }}</td>
+                    <td data-label="نوع">{{ p.get_direction_display }}</td>
+                    <td data-label="مبلغ" class="num">{{ p.amount|floatformat:0|intcomma }}</td>
+                    <td data-label="تاریخ">{{ p.date|shamsi_date }}</td>
+                    <td data-label="ثبت‌کننده">
+                      {% if p.created_by %}
+                        {{ p.created_by.get_full_name|default:p.created_by.username }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td data-label="وضعیت">
+                      <span class="pending-status pending-status--{{ p.status }}">{{ p.get_status_display }}</span>
+                    </td>
+                    {% if can_approve_pending and p.status == 'pending' %}
+                      <td data-label="عملیات">
+                        <button type="button"
+                                class="deal-detail-btn deal-detail-btn--primary btn-approve-pending"
+                                data-pending-id="{{ p.id }}">تایید</button>
+                        <button type="button"
+                                class="deal-detail-btn deal-detail-btn--ghost btn-reject-pending"
+                                data-pending-id="{{ p.id }}">رد</button>
+                      </td>
+                    {% elif can_approve_pending %}
+                      <td data-label="عملیات">—</td>
+                    {% endif %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      {% endif %}
+    </div>
+  </div>
+  <script>
+    window.DEAL_ACCOUNTS_CONFIG = {
+      paymentsByAccount: {{ payments_by_account_json|safe }},
+      paymentUrl: "{% url 'finance:deal-account-payment' deal.id %}",
+      dealId: {{ deal.id }},
+      canApprovePending: {{ can_approve_pending|yesno:"true,false" }},
+      approvePendingUrlTemplate: "{% url 'finance:pending-deal-payment-approve' deal_id=deal.id pending_id=0 %}",
+      rejectPendingUrlTemplate: "{% url 'finance:pending-deal-payment-reject' deal_id=deal.id pending_id=0 %}"
+    };
   </script>
 {% endblock %}
 {% block modals %}
+  {% comment %} مودال جزئیات معامله {% endcomment %}
   <div class="deal-detail-modal-overlay"
        id="dealDetailModal"
-       aria-hidden="true">
-    <div class="deal-detail-modal"
-         role="dialog"
-         aria-modal="true"
-         aria-labelledby="dealDetailModalTitle">
-      <div class="deal-detail-modal-header">
-        <h2 class="deal-detail-modal-title" id="dealDetailModalTitle">جزئیات معامله #{{ deal.id }}</h2>
+       aria-hidden="true"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="dealDetailModalTitle">
+    <div class="deal-detail-modal">
+      <header class="deal-detail-modal-header">
+        <h2 class="deal-detail-modal-title" id="dealDetailModalTitle">جزئیات معامله: {{ deal.title|default:deal.id }}</h2>
         <button type="button"
                 class="deal-detail-modal-close"
-                id="dealDetailModalClose">بستن</button>
-      </div>
+                id="dealDetailModalClose"
+                aria-label="بستن">بستن</button>
+      </header>
       <div class="deal-detail-modal-body">
         <div class="detail-grid">
-          <div class="detail-card">
-            <h3>اطلاعات پایه</h3>
-            <div class="kv">
-              <b>کد معامله</b><span>{{ deal.id }}</span>
-              <b>وضعیت</b><span>{{ deal.get_status_display|default:deal.status }}</span>
-              <b>نوع</b><span>{{ deal.type.name|default:"—" }}</span>
-              <b>سازنده</b><span>{{ deal.created_by.get_full_name|default:deal.created_by.username }}</span>
-            </div>
-          </div>
-          <div class="detail-card">
-            <h3>تاریخ‌ها</h3>
-            <div class="kv">
-              <b>تاریخ مبایعه</b><span>{{ deal.agreement_date|default:"ثبت نشده" }}</span>
-              <b>تاریخ دفترخانه</b><span>{{ deal.office_date|default:"ثبت نشده" }}</span>
-              <b>تاریخ ثبت</b><span>{{ deal.created_at|date:"Y/m/d H:i" }}</span>
-            </div>
-          </div>
-          <div class="detail-card">
-            <h3>مبالغ</h3>
-            <div class="kv">
-              <b>مبلغ معامله</b><span>
-                {% if deal.amount %}
-                  {{ deal.amount|floatformat:0|intcomma }} ریال
-                {% else %}
-                  —
-                {% endif %}
-              </span>
-              <b>قیمت پایه</b><span>
-                {% if deal.base_price %}
-                  {{ deal.base_price|floatformat:0|intcomma }} ریال
-                {% else %}
-                  ثبت نشده
-                {% endif %}
-              </span>
-              <b>اضافه پرداخت</b><span>
-                {% if deal.overpayment %}
-                  {{ deal.overpayment|floatformat:0|intcomma }} ریال
-                {% else %}
-                  ثبت نشده
-                {% endif %}
-              </span>
-              <b>دریافتی اضافه پرداخت</b><span>
-                {% if deal.overpayment_received %}
-                  {{ deal.overpayment_received|floatformat:0|intcomma }} ریال
-                {% else %}
-                  ثبت نشده
-                {% endif %}
-              </span>
-            </div>
-          </div>
-          <div class="detail-card">
-            <h3>طرفین</h3>
-            <div class="kv">
-              <b>خریداران</b><span>
-                {% if deal.buyers.all %}
-                  {{ deal.buyers.all|join:"، " }}
-                {% else %}
-                  ثبت نشده
-                {% endif %}
-              </span>
-              <b>فروشندگان</b><span>
-                {% if deal.sellers.all %}
-                  {{ deal.sellers.all|join:"، " }}
-                {% else %}
-                  ثبت نشده
-                {% endif %}
-              </span>
-              <b>مشاوران</b><span>
-                {% if deal.consultants.all %}
-                  {{ deal.consultants.all|join:"، " }}
-                {% else %}
-                  ثبت نشده
-                {% endif %}
-              </span>
-            </div>
-          </div>
+          <section class="detail-card" aria-labelledby="detail-base-heading">
+            <h3 id="detail-base-heading" class="detail-card-title">اطلاعات پایه</h3>
+            <dl class="detail-kv">
+              <div class="detail-kv-row">
+                <dt>عنوان معامله</dt>
+                <dd>
+                  {{ deal.title|default:"—" }}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>وضعیت</dt>
+                <dd>
+                  {{ deal.get_status_display|default:deal.status }}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>نوع</dt>
+                <dd>
+                  {{ deal.type.name|default:"—" }}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>سازنده</dt>
+                <dd>
+                  {{ deal.created_by.get_full_name|default:deal.created_by.username }}
+                </dd>
+              </div>
+            </dl>
+          </section>
+          <section class="detail-card" aria-labelledby="detail-dates-heading">
+            <h3 id="detail-dates-heading" class="detail-card-title">تاریخ‌ها</h3>
+            <dl class="detail-kv">
+              <div class="detail-kv-row">
+                <dt>تاریخ مبایعه</dt>
+                <dd>
+                  {% if deal.agreement_date %}
+                    {{ deal.agreement_date|shamsi_date }}
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>تاریخ دفترخانه</dt>
+                <dd>
+                  {% if deal.office_date %}
+                    {{ deal.office_date|shamsi_date }}
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>تاریخ ثبت</dt>
+                <dd>
+                  {{ deal.created_at|shamsi_date:"%Y/%m/%d %H:%M" }}
+                </dd>
+              </div>
+            </dl>
+          </section>
+          <section class="detail-card" aria-labelledby="detail-amounts-heading">
+            <h3 id="detail-amounts-heading" class="detail-card-title">مبالغ</h3>
+            <dl class="detail-kv">
+              <div class="detail-kv-row">
+                <dt>مبلغ معامله</dt>
+                <dd>
+                  {% if deal.amount %}
+                    {{ deal.amount|floatformat:0|intcomma }} ریال
+                  {% else %}
+                    —
+                  {% endif %}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>قیمت پایه</dt>
+                <dd>
+                  {% if deal.base_price %}
+                    {{ deal.base_price|floatformat:0|intcomma }} ریال
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>اضافه پرداخت</dt>
+                <dd>
+                  {% if deal.overpayment %}
+                    {{ deal.overpayment|floatformat:0|intcomma }} ریال
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>دریافتی اضافه پرداخت</dt>
+                <dd>
+                  {% if deal.overpayment_received %}
+                    {{ deal.overpayment_received|floatformat:0|intcomma }} ریال
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+            </dl>
+          </section>
+          <section class="detail-card" aria-labelledby="detail-parties-heading">
+            <h3 id="detail-parties-heading" class="detail-card-title">طرفین</h3>
+            <dl class="detail-kv">
+              <div class="detail-kv-row">
+                <dt>خریداران</dt>
+                <dd>
+                  {% if deal.buyers.all %}
+                    {{ deal.buyers.all|join:"، " }}
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>فروشندگان</dt>
+                <dd>
+                  {% if deal.sellers.all %}
+                    {{ deal.sellers.all|join:"، " }}
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+              <div class="detail-kv-row">
+                <dt>مشاوران</dt>
+                <dd>
+                  {% if deal.consultants.all %}
+                    {{ deal.consultants.all|join:"، " }}
+                  {% else %}
+                    ثبت نشده
+                  {% endif %}
+                </dd>
+              </div>
+            </dl>
+          </section>
         </div>
         {% if deal.description %}
-          <div class="detail-card" style="margin-top:10px;">
-            <h3>توضیحات</h3>
-            <div class="kv">
-              <b>شرح</b><span>{{ deal.description }}</span>
-            </div>
-          </div>
+          <section class="detail-card detail-card--full"
+                   aria-labelledby="detail-desc-heading">
+            <h3 id="detail-desc-heading" class="detail-card-title">توضیحات</h3>
+            <p class="detail-description">{{ deal.description }}</p>
+          </section>
         {% endif %}
       </div>
     </div>
   </div>
+  {% comment %} مودال لیست تراکنش‌های هر حساب {% endcomment %}
   <div class="deal-detail-modal-overlay"
        id="paymentsModal"
        aria-hidden="true">
@@ -664,6 +397,7 @@
       </div>
     </div>
   </div>
+  {% comment %} مودال نمایش رسید (تصویر/لینک) {% endcomment %}
   <div class="deal-detail-modal-overlay"
        id="receiptModal"
        aria-hidden="true">
@@ -681,7 +415,7 @@
         <img id="receiptModalImage"
              class="receipt-image"
              alt="رسید"
-             style="display:none" />
+             style="display:none">
         <div class="receipt-fallback"
              id="receiptModalFallback"
              style="display:none">
@@ -693,6 +427,7 @@
       </div>
     </div>
   </div>
+  {% comment %} مودال ثبت تراکنش (پرداخت/دریافت) {% endcomment %}
   {% if deal_accounts_list %}
     <div class="deal-detail-modal-overlay"
          id="registerPaymentModal"
@@ -708,6 +443,13 @@
                   id="registerPaymentModalClose">بستن</button>
         </div>
         <div class="deal-detail-modal-body">
+          <p class="payment-modal-hint">
+            {% if is_consultant_deal_accounts %}
+              شما به‌عنوان مشاور فقط می‌توانید تراکنش برای <strong>حساب‌های مشتری</strong> (پرداخت/دریافت مشتری) پیشنهاد دهید. تراکنش پس از تایید اپراتور یا مدیر بنگاه در دفتر اعمال می‌شود.
+            {% else %}
+              فقط می‌توانید تراکنش برای <strong>پرداخت/دریافت مشتری</strong>، <strong>پرداخت به مشاور</strong> یا <strong>پرداخت به مدیر بنگاه</strong> ثبت کنید.
+            {% endif %}
+          </p>
           <form id="registerPaymentForm"
                 class="payment-form"
                 enctype="multipart/form-data">
@@ -718,7 +460,12 @@
               </label>
               <select id="paymentAccount" name="account_id" required>
                 <option value="">— انتخاب حساب —</option>
-                {% for acc in deal_accounts_list %}<option value="{{ acc.id }}">{{ acc.code }} — {{ acc.name }}</option>{% endfor %}
+                {% for acc in deal_accounts_list %}
+                  <option value="{{ acc.id }}"
+                          data-remaining="{{ acc.remaining_amount|floatformat:0 }}">
+                    {{ acc.code }} — {{ acc.name }} (باقی‌مانده: {{ acc.remaining_amount|floatformat:0|intcomma }} ریال)
+                  </option>
+                {% endfor %}
               </select>
             </div>
             <div class="form-row">
@@ -730,9 +477,8 @@
                      name="amount"
                      inputmode="numeric"
                      required
-                     placeholder="مثال: ۱٬۰۰۰٬۰۰۰"
+                     placeholder="۱٬۰۰۰٬۰۰۰"
                      data-raw="">
-              <span class="form-hint">سه‌رقم سه‌رقم وارد کنید یا پس از وارد کردن مبلغ از فیلد خارج شوید.</span>
             </div>
             <div class="form-row">
               <label for="paymentDirection">
@@ -781,4 +527,7 @@
       </div>
     </div>
   {% endif %}
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'js/deal_accounts.js' %}"></script>
 {% endblock %}

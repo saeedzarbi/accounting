@@ -19,6 +19,7 @@ class Command(BaseCommand):
         role_choices = [
             ("office_manager", "مدیر دفتر"),
             ("office_specialist", "کارشناس دفتر"),
+            ("consultant", "مشاور"),
         ]
         for role_code, role_name in role_choices:
             Role.objects.get_or_create(name=role_code)

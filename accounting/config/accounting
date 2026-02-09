@@ -1,90 +1,42 @@
 server {
-    listen 80;
-    server_name accounting.moshaver-amlak.com;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name accounting.moshaver-amlak.com;
-
-    ssl_certificate /etc/nginx/ssl/cert.pem;
-    ssl_certificate_key /etc/nginx/ssl/privatekey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers off;
-
-    access_log /var/log/nginx/accounting.access.log;
-    error_log  /var/log/nginx/accounting.error.log warn;
-    client_max_body_size 20M;
-
-    location = /favicon.ico {
-        access_log off;
-        log_not_found off;
+    listen 80 ;
+    listen 443 ssl http2 ;
+    server_name server.moshaver-amlak.com;
+    index index.php index.html index.htm default.php default.htm default.html;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host $server_name;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $http_connection;
+    access_log /www/sites/server.moshaver-amlak.com/log/access.log main;
+    error_log /www/sites/server.moshaver-amlak.com/log/error.log;
+    location ^~ /.well-known/acme-challenge {
+        allow all;
+        root /usr/share/nginx/html;
     }
-
-    # Static files
-    location /static/ {
-        alias /home/apireal/real_estate_accouting/RealEstate_Accouting/accounting/staticfiles/;
-        access_log off;
-        expires 30d;
+    location /backup854754/ {
+        alias /opt/1panel/backup/databases/;
+        index index.html;
+        auth_basic "Backup Databases";
+        auth_basic_user_file /www/sites/server.moshaver-amlak.com/.htpasswd_backup;
+        autoindex on;
+        autoindex_exact_size off;
+        autoindex_localtime on;
     }
-
-    # Proxy to Gunicorn (Django)
-    location / {
-        proxy_pass http://127.0.0.1:9089;
-        proxy_http_version 1.1;
-        proxy_redirect off;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 90;
-        proxy_connect_timeout 90;
+    include /www/sites/server.moshaver-amlak.com/proxy/*.conf;
+    if ($scheme = http) {
+        return 301 https://$host$request_uri;
     }
-
-}
-
-server {
-    listen 10443 ssl http2;
-    server_name accounting.moshaver-amlak.com;
-
-    ssl_certificate /etc/nginx/ssl/cert.pem;
-    ssl_certificate_key /etc/nginx/ssl/privatekey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers off;
-
-    access_log /var/log/nginx/accounting.access.log;
-    error_log  /var/log/nginx/accounting.error.log warn;
-    client_max_body_size 50M;
-
-    location = /favicon.ico {
-        access_log off;
-        log_not_found off;
-    }
-
-    location = / {
-        return 301 /login/;
-    }
-    # Static files
-    location /static/ {
-        alias /home/apireal/real_estate_accouting/RealEstate_Accouting/accounting/staticfiles/;
-        access_log off;
-        expires 30d;
-    }
-
-    # Proxy to Gunicorn (Django)
-    location / {
-        proxy_pass http://127.0.0.1:9089;
-        proxy_http_version 1.1;
-        proxy_redirect off;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 200;
-        proxy_connect_timeout 200;
-    }
-
+    ssl_certificate /www/sites/server.moshaver-amlak.com/ssl/fullchain.pem;
+    ssl_certificate_key /www/sites/server.moshaver-amlak.com/ssl/privkey.pem;
+    ssl_protocols TLSv1.3 TLSv1.2 TLSv1.1 TLSv1;
+    ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:!aNULL:!eNULL:!EXPORT:!DSS:!DES:!RC4:!3DES:!MD5:!PSK:!KRB5:!SRP:!CAMELLIA:!SEED;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    error_page 497 https://$host$request_uri;
+    proxy_set_header X-Forwarded-Proto https;
+    add_header Strict-Transport-Security "max-age=31536000";
 }

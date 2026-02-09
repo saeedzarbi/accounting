@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}
+  {% if person_type == 'client' %}
+    اطلاعات حساب مشتری {{ client.name }}
+  {% else %}
+    اطلاعات حساب مشاور {{ consultant.name }}
+  {% endif %}
+  — سامانه حسابداری املاک
+{% endblock %}
+{% block body_class %}accounts-page account-detail-page{% endblock %}
+{% block extra_head %}
+  <style>
+    .account-detail-page .shell-content {
+      align-items: flex-start;
+      padding-top: 1.5rem;
+      padding-bottom: 3rem;
+    }
+    .account-detail-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .account-detail-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      text-decoration: none;
+    }
+    .account-detail-back:hover { color: var(--color-accent); }
+    .account-detail-title { margin: 0; font-size: 1.4rem; font-family: var(--font-title); }
+    .account-detail-subtitle { margin: 0.25rem 0 0; font-size: 14px; color: var(--color-text-muted); }
+    .account-detail-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+    .account-detail-actions a {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: transparent;
+      color: var(--color-text);
+      text-decoration: none;
+    }
+    .account-detail-actions a:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+    .detail-section {
+      margin-bottom: 1.75rem;
+      padding: 1.25rem;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: color-mix(in srgb, var(--color-surface-alt) 50%, transparent);
+    }
+    .detail-section h2 {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      font-family: var(--font-title);
+      color: var(--color-text-muted);
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .detail-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .detail-card {
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: var(--color-surface);
+    }
+    .detail-card-label { font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px; }
+    .detail-card-value { font-size: 1.1rem; font-weight: 700; }
+    .detail-card-value.positive { color: #15803d; }
+    .detail-card-value.negative { color: #b91c1c; }
+    .info-kv {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 16px;
+      font-size: 14px;
+    }
+    .info-kv dt { margin: 0; color: var(--color-text-muted); }
+    .info-kv dd { margin: 0; }
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .detail-table th, .detail-table td {
+      padding: 8px 10px;
+      text-align: right;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    .detail-table th { color: var(--color-text-muted); font-weight: 600; }
+    .detail-table .num {
+      font-variant-numeric: tabular-nums;
+      direction: ltr;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .detail-table tbody td:nth-child(2) { color: #ef4444; font-weight: 900; }
+    .detail-table tbody td:nth-child(3) { color: #22c55e; font-weight: 900; }
+    html[data-theme="light"] .detail-table tbody td:nth-child(2) { color: #b91c1c; }
+    html[data-theme="light"] .detail-table tbody td:nth-child(3) { color: #15803d; }
+    .detail-table .link-deal {
+      font-size: 12px;
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    .detail-table .link-deal:hover { text-decoration: underline; }
+    .empty-row td { color: var(--color-text-muted); font-style: italic; padding: 1rem; }
+    @media (max-width: 640px) {
+      .detail-grid-2 { grid-template-columns: 1fr; }
+      .info-kv { grid-template-columns: 1fr; }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <header class="account-detail-header">
+        <a class="account-detail-back" href="{% url 'manage-accounts' %}">← بازگشت به مدیریت حساب‌ها</a>
+        <h1 class="account-detail-title">
+          {% if person_type == 'client' %}
+            اطلاعات حساب مشتری — {{ client.name }}
+          {% else %}
+            اطلاعات حساب مشاور — {{ consultant.name }}
+          {% endif %}
+        </h1>
+        <p class="account-detail-subtitle">خلاصه حساب‌ها، مانده، ثبت‌های دفتری و معاملات مرتبط</p>
+        <div class="account-detail-actions">
+          {% if person_type == 'client' %}
+            <a href="{% url 'edit-client' client.id %}">ویرایش مشتری</a>
+          {% else %}
+            <a href="{% url 'edit-consultant' consultant.id %}">ویرایش مشاور</a>
+          {% endif %}
+        </div>
+      </header>
+      <section class="detail-section">
+        <h2>اطلاعات شخص</h2>
+        {% if person_type == 'client' %}
+          <dl class="info-kv">
+            <dt>نام</dt>
+            <dd>
+              {{ client.name }}
+            </dd>
+            <dt>نام پدر</dt>
+            <dd>
+              {{ client.father_name|default:"—" }}
+            </dd>
+            <dt>کد ملی</dt>
+            <dd>
+              {{ client.national_id|default:"—" }}
+            </dd>
+            <dt>تلفن</dt>
+            <dd>
+              {{ client.phone|default:"—" }}
+            </dd>
+            <dt>تاریخ تولد</dt>
+            <dd>
+              {{ client.birth_date|default:"—" }}
+            </dd>
+            <dt>صادره از</dt>
+            <dd>
+              {{ client.city_of_issuance|default:"—" }}
+            </dd>
+          </dl>
+        {% else %}
+          <dl class="info-kv">
+            <dt>نام</dt>
+            <dd>
+              {{ consultant.name }}
+            </dd>
+            <dt>تلفن</dt>
+            <dd>
+              {{ consultant.phone|default:"—" }}
+            </dd>
+          </dl>
+        {% endif %}
+      </section>
+      <section class="detail-section">
+        <h2>حساب‌ها و مانده</h2>
+        <div class="detail-grid-2">
+          <div class="detail-card">
+            <div class="detail-card-label">
+              {% if person_type == 'client' %}
+                طلب از مشتری (بستانکاری)
+              {% else %}
+                بستانکاری از مشاور
+              {% endif %}
+            </div>
+            <div class="detail-card-value">{{ account_receivable.code }} — {{ account_receivable.name }}</div>
+            <div class="detail-card-value {% if balance_receivable >= 0 %}positive{% else %}negative{% endif %}"
+                 style="margin-top:8px">مانده: {{ balance_receivable|floatformat:0|intcomma }} ریال</div>
+          </div>
+          <div class="detail-card">
+            <div class="detail-card-label">
+              {% if person_type == 'client' %}
+                پرداختنی به مشتری
+              {% else %}
+                پرداختنی به مشاور
+              {% endif %}
+            </div>
+            <div class="detail-card-value">{{ account_payable.code }} — {{ account_payable.name }}</div>
+            <div class="detail-card-value {% if balance_payable >= 0 %}positive{% else %}negative{% endif %}"
+                 style="margin-top:8px">مانده: {{ balance_payable|floatformat:0|intcomma }} ریال</div>
+          </div>
+        </div>
+      </section>
+      <section class="detail-section">
+        <h2>آخرین پرداخت‌ها و دریافت‌ها</h2>
+        <div class="detail-grid-2">
+          <div>
+            <div class="detail-card-label" style="margin-bottom:8px;">دریافت‌ها (حساب طلب/بستانکاری)</div>
+            {% if payments_receivable %}
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>تاریخ</th>
+                    <th>نوع</th>
+                    <th>مبلغ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in payments_receivable %}
+                    <tr>
+                      <td>{{ p.date|date:"Y/m/d" }}</td>
+                      <td>{{ p.get_direction_display }}</td>
+                      <td class="num">{{ p.amount|floatformat:0|intcomma }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p style="color:var(--color-text-muted);font-size:13px;">ثبتی وجود ندارد.</p>
+            {% endif %}
+          </div>
+          <div>
+            <div class="detail-card-label" style="margin-bottom:8px;">پرداخت‌ها (حساب پرداختنی)</div>
+            {% if payments_payable %}
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>تاریخ</th>
+                    <th>نوع</th>
+                    <th>مبلغ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in payments_payable %}
+                    <tr>
+                      <td>{{ p.date|date:"Y/m/d" }}</td>
+                      <td>{{ p.get_direction_display }}</td>
+                      <td class="num">{{ p.amount|floatformat:0|intcomma }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p style="color:var(--color-text-muted);font-size:13px;">ثبتی وجود ندارد.</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+      {% if person_type == 'client' %}
+        <section class="detail-section">
+          <h2>معاملات (خریدار)</h2>
+          {% if deals_as_buyer %}
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>معامله</th>
+                  <th>نوع</th>
+                  <th>مبلغ</th>
+                  <th>تاریخ</th>
+                  <th>حساب معامله</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in deals_as_buyer %}
+                  <tr>
+                    <td>#{{ d.id }} {{ d.title|truncatewords:5|default:"—" }}</td>
+                    <td>{{ d.type.name }}</td>
+                    <td class="num">{{ d.amount|floatformat:0|intcomma|default:"—" }}</td>
+                    <td>{{ d.date|default:"—" }}</td>
+                    <td>
+                      <a class="link-deal" href="{% url 'finance:deal-accounts' d.id %}">دفتر حساب معامله</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p style="color:var(--color-text-muted);font-size:13px;">این مشتری در هیچ معامله‌ای به‌عنوان خریدار ثبت نشده است.</p>
+          {% endif %}
+        </section>
+        <section class="detail-section">
+          <h2>معاملات (فروشنده)</h2>
+          {% if deals_as_seller %}
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>معامله</th>
+                  <th>نوع</th>
+                  <th>مبلغ</th>
+                  <th>تاریخ</th>
+                  <th>حساب معامله</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in deals_as_seller %}
+                  <tr>
+                    <td>#{{ d.id }} {{ d.title|truncatewords:5|default:"—" }}</td>
+                    <td>{{ d.type.name }}</td>
+                    <td class="num">{{ d.amount|floatformat:0|intcomma|default:"—" }}</td>
+                    <td>{{ d.date|default:"—" }}</td>
+                    <td>
+                      <a class="link-deal" href="{% url 'finance:deal-accounts' d.id %}">دفتر حساب معامله</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p style="color:var(--color-text-muted);font-size:13px;">این مشتری در هیچ معامله‌ای به‌عنوان فروشنده ثبت نشده است.</p>
+          {% endif %}
+        </section>
+        <section class="detail-section">
+          <h2>کمیسیون‌های مشتری</h2>
+          {% if commissions %}
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>معامله</th>
+                  <th>نقش</th>
+                  <th>مبلغ کمیسیون</th>
+                  <th>حساب معامله</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in commissions %}
+                  <tr>
+                    <td>#{{ c.deal.id }}</td>
+                    <td>{{ c.get_role_display }}</td>
+                    <td class="num">{{ c.amount|floatformat:0|intcomma|default:"۰" }} ریال</td>
+                    <td>
+                      <a class="link-deal" href="{% url 'finance:deal-accounts' c.deal_id %}">دفتر حساب معامله</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p style="color:var(--color-text-muted);font-size:13px;">کمیسیونی برای این مشتری ثبت نشده است.</p>
+          {% endif %}
+        </section>
+      {% else %}
+        <section class="detail-section">
+          <h2>معاملات مرتبط (مشاور)</h2>
+          {% if deals %}
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>معامله</th>
+                  <th>نوع</th>
+                  <th>مبلغ</th>
+                  <th>تاریخ</th>
+                  <th>حساب معامله</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in deals %}
+                  <tr>
+                    <td>#{{ d.id }} {{ d.title|truncatewords:5|default:"—" }}</td>
+                    <td>{{ d.type.name }}</td>
+                    <td class="num">{{ d.amount|floatformat:0|intcomma|default:"—" }}</td>
+                    <td>{{ d.date|default:"—" }}</td>
+                    <td>
+                      <a class="link-deal" href="{% url 'finance:deal-accounts' d.id %}">دفتر حساب معامله</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p style="color:var(--color-text-muted);font-size:13px;">این مشاور در هیچ معامله‌ای ثبت نشده است.</p>
+          {% endif %}
+        </section>
+      {% endif %}
+      <section class="detail-section">
+        <h2>آخرین ثبت‌های دفتری</h2>
+        <div class="detail-grid-2">
+          <div>
+            <div class="detail-card-label" style="margin-bottom:8px;">حساب طلب / بستانکاری</div>
+            {% if entries_receivable %}
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>تاریخ</th>
+                    <th>بدهکار</th>
+                    <th>بستانکار</th>
+                    <th>شرح</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for e in entries_receivable %}
+                    <tr>
+                      <td>{{ e.transaction.date|date:"Y/m/d" }}</td>
+                      <td class="num">
+                        {% if e.debit %}
+                          {{ e.debit|floatformat:0|intcomma }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td class="num">
+                        {% if e.credit %}
+                          {{ e.credit|floatformat:0|intcomma }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td>{{ e.description|truncatewords:8|default:"—" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p style="color:var(--color-text-muted);font-size:13px;">ثبتی وجود ندارد.</p>
+            {% endif %}
+          </div>
+          <div>
+            <div class="detail-card-label" style="margin-bottom:8px;">حساب پرداختنی</div>
+            {% if entries_payable %}
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>تاریخ</th>
+                    <th>بدهکار</th>
+                    <th>بستانکار</th>
+                    <th>شرح</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for e in entries_payable %}
+                    <tr>
+                      <td>{{ e.transaction.date|date:"Y/m/d" }}</td>
+                      <td class="num">
+                        {% if e.debit %}
+                          {{ e.debit|floatformat:0|intcomma }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td class="num">
+                        {% if e.credit %}
+                          {{ e.credit|floatformat:0|intcomma }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td>{{ e.description|truncatewords:8|default:"—" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p style="color:var(--color-text-muted);font-size:13px;">ثبتی وجود ندارد.</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

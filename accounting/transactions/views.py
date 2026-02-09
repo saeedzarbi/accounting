@@ -1,6 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.http import Http404
+from django.utils import timezone
 from django.views.generic import TemplateView
 from drf_yasg.utils import swagger_auto_schema
 from finance.models import DealFinance
@@ -16,6 +17,7 @@ from users.models import Consultant
 from .models import (
     Client,
     DealClientCommission,
+    DealConsultantApproval,
     DealContract,
     Deals,
     TransactionType,
@@ -37,7 +39,20 @@ class DealsListView(APIView):
         user = request.user
         office = getattr(user, "office", None)
 
-        if office:
+        if getattr(user, "is_consultant", False) and getattr(
+            user, "consultant_profile", None
+        ):
+            consultant = user.consultant_profile
+            deals = (
+                Deals.objects.filter(
+                    consultants=consultant,
+                    status__in=["consultant_pending", "pending", "approved"],
+                )
+                .select_related("created_by")
+                .prefetch_related("contracts")
+                .order_by("-created_at")
+            )
+        elif office:
             deals = (
                 Deals.objects.filter(office=office)
                 .select_related("created_by")
@@ -47,10 +62,28 @@ class DealsListView(APIView):
         else:
             deals = Deals.objects.none()
 
+        search = (request.GET.get("search") or "").strip()
+        if search:
+            deals = deals.filter(title__icontains=search)
+
+        status_filter = (request.GET.get("status") or "").strip()
+        if status_filter:
+            valid_statuses = {
+                "init",
+                "consultant_pending",
+                "pending",
+                "approved",
+                "rejected",
+            }
+            if status_filter in valid_statuses:
+                deals = deals.filter(status=status_filter)
+
         paginator = CustomPagination()
         result_page = paginator.paginate_queryset(deals, request)
 
-        serializer = DealsListSerializer(result_page, many=True)
+        serializer = DealsListSerializer(
+            result_page, many=True, context={"request": request}
+        )
 
         return paginator.get_paginated_response(serializer.data)
 
@@ -82,6 +115,15 @@ class ContractListView(APIView):
 class DealCreatePageView(LoginRequiredMixin, TemplateView):
     template_name = "transactions/deal_create.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if getattr(request.user, "is_consultant", False):
+            from django.contrib import messages
+            from django.shortcuts import redirect
+
+            messages.info(request, "ثبت معامله فقط برای پرسنل دفتر امکان‌پذیر است.")
+            return redirect("dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["transaction_types"] = TransactionType.objects.all()
@@ -94,19 +136,28 @@ class DealDetailView(RetrieveAPIView):
     lookup_field = "id"
 
     def get_queryset(self):
-
         user = self.request.user
-        if user.office:
-            return Deals.objects.filter(office=user.office).prefetch_related(
-                "buyers",
-                "sellers",
-                "splits",
-                "splits__consultant",
-                "client_commissions",
-                "client_commissions__client",
-                "contracts",
-                "consultants",
+        base_qs = Deals.objects.prefetch_related(
+            "buyers",
+            "sellers",
+            "splits",
+            "splits__consultant",
+            "client_commissions",
+            "client_commissions__client",
+            "contracts",
+            "consultants",
+            "consultant_approvals",
+            "consultant_approvals__consultant",
+        )
+        if getattr(user, "is_consultant", False) and getattr(
+            user, "consultant_profile", None
+        ):
+            return base_qs.filter(
+                consultants=user.consultant_profile,
+                status__in=["consultant_pending", "pending", "approved"],
             )
+        if user.office:
+            return base_qs.filter(office=user.office)
         return Deals.objects.none()
 
     def get_object(self):
@@ -248,7 +299,9 @@ class UpdateDealView(APIView):
 
         if deal.status == "approved":
             return Response(
-                {"detail": 'Only deals in "init" and "pending" status can be updated.'},
+                {
+                    "detail": 'Only deals in "init", "consultant_pending" and "pending" status can be updated.'
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -264,6 +317,9 @@ class UpdateDealView(APIView):
 
         if serializer.is_valid():
             updated_deal = serializer.save()
+            if updated_deal.status == "consultant_pending":
+                consultant_ids = _sync_consultant_approvals(updated_deal)
+                _maybe_move_to_manager_pending(updated_deal, consultant_ids)
             return Response(DealsSerializer(updated_deal).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -462,6 +518,45 @@ def _user_can_approve_reject(user):
     return getattr(user, "is_office_manager", False)
 
 
+def _sync_consultant_approvals(deal):
+    consultant_ids = set(deal.consultants.values_list("id", flat=True))
+    existing = DealConsultantApproval.objects.filter(deal=deal)
+    existing_ids = set(existing.values_list("consultant_id", flat=True))
+
+    missing_ids = consultant_ids - existing_ids
+    for consultant_id in missing_ids:
+        DealConsultantApproval.objects.create(
+            deal=deal,
+            consultant_id=consultant_id,
+            status=DealConsultantApproval.ApprovalStatus.PENDING,
+        )
+
+    if existing_ids - consultant_ids:
+        existing.exclude(consultant_id__in=consultant_ids).delete()
+
+    return consultant_ids
+
+
+def _maybe_move_to_manager_pending(deal, consultant_ids=None):
+    if consultant_ids is None:
+        consultant_ids = set(deal.consultants.values_list("id", flat=True))
+    if not consultant_ids:
+        if deal.status == "consultant_pending":
+            deal.status = "pending"
+            deal.save(update_fields=["status"])
+        return
+    approvals = DealConsultantApproval.objects.filter(
+        deal=deal, consultant_id__in=consultant_ids
+    )
+    if approvals.count() != len(consultant_ids):
+        return
+    if approvals.filter(status=DealConsultantApproval.ApprovalStatus.PENDING).exists():
+        return
+    if deal.status == "consultant_pending":
+        deal.status = "pending"
+        deal.save(update_fields=["status"])
+
+
 class ApproveDealView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -532,5 +627,81 @@ class RejectDealView(APIView):
         deal.save()
         return Response(
             {"message": "معامله رد شد.", "rejection_reason": deal.rejection_reason},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ConsultantApprovalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        consultant = getattr(user, "consultant_profile", None)
+        if not getattr(user, "is_consultant", False) or not consultant:
+            return Response(
+                {"message": "فقط مشاور می‌تواند نظر کمیسیون را ثبت کند."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        deal_id = kwargs.get("deal_id")
+        try:
+            deal = Deals.objects.get(id=deal_id, consultants=consultant)
+        except Deals.DoesNotExist:
+            return Response(
+                {"message": "معامله یافت نشد یا شما به آن دسترسی ندارید."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if deal.status != "consultant_pending":
+            return Response(
+                {
+                    "message": "این معامله در وضعیت تایید مشاور نیست.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        status_code = (request.data.get("status") or "").strip().lower()
+        note = (request.data.get("note") or "").strip()
+        suggested_amount = request.data.get("suggested_amount")
+
+        if status_code not in ("approved", "review"):
+            return Response(
+                {"message": "وضعیت تایید نامعتبر است."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        amount_value = None
+        if suggested_amount is not None and str(suggested_amount).strip():
+            try:
+                amount_value = float(str(suggested_amount).replace(",", ""))
+            except (TypeError, ValueError):
+                return Response(
+                    {"message": "مبلغ پیشنهادی معتبر نیست."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if status_code == "review" and (amount_value is None or amount_value <= 0):
+            return Response(
+                {"message": "برای «ثبت پیشنهاد برای مدیر» مبلغ پیشنهادی الزامی است."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        approval, _ = DealConsultantApproval.objects.get_or_create(
+            deal=deal, consultant=consultant
+        )
+        approval.status = status_code
+        approval.note = note
+        approval.suggested_amount = (
+            amount_value if (amount_value is not None and amount_value > 0) else None
+        )
+        approval.responded_at = timezone.now()
+        approval.save()
+
+        consultant_ids = _sync_consultant_approvals(deal)
+        _maybe_move_to_manager_pending(deal, consultant_ids)
+
+        return Response(
+            {
+                "message": "نظر مشاور ثبت شد.",
+                "deal_status": deal.status,
+            },
             status=status.HTTP_200_OK,
         )

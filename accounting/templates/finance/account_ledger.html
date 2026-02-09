@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% load finance_tags %}
+{% block title %}گردش حساب {{ account.code }} — سامانه حسابداری املاک{% endblock %}
+{% block body_class %}account-ledger-page{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    .account-ledger-page .shell-content { align-items: flex-start; padding-top: 1.5rem; padding-bottom: 3rem; }
+    .ledger-header { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .ledger-back { font-size: 0.9rem; color: var(--color-text-muted); text-decoration: none; }
+    .ledger-back:hover { color: var(--color-accent); }
+    .ledger-title { margin: 0; font-size: 1.4rem; font-family: var(--font-title); }
+    .ledger-subtitle { margin: 0.25rem 0 0; font-size: 14px; color: var(--color-text-muted); }
+    .ledger-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .ledger-filters input { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.35); background: var(--color-surface); }
+    .ledger-filters button { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--color-accent); background: var(--color-accent); color: #fff; cursor: pointer; font-size: 13px; }
+    .ledger-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ledger-table th, .ledger-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+    .ledger-table th { color: var(--color-text-muted); font-weight: 600; }
+    .ledger-table .num { font-variant-numeric: tabular-nums; direction: ltr; }
+    .ledger-table .positive { color: #15803d; }
+    .ledger-table .negative { color: #b91c1c; }
+    .empty-state { padding: 24px; color: var(--color-text-muted); text-align: center; border-radius: 16px; background: rgba(148, 163, 184, 0.06); }
+  </style>
+{% endblock %}
+{% block content %}
+  <div class="page-card">
+    <div class="page-card-inner">
+      <div class="ledger-header">
+        <a class="ledger-back" href="{% url 'finance:chart-of-accounts' %}">← بازگشت به نمودار حساب‌ها</a>
+        <h1 class="ledger-title">گردش حساب: {{ account.code }} — {{ account.name }}</h1>
+        <p class="ledger-subtitle">
+          مانده فعلی: <strong>{{ balance|floatformat:0|intcomma }}</strong> ریال
+        </p>
+      </div>
+      <form method="get" class="ledger-filters">
+        <label for="date_from">از تاریخ:</label>
+        <input type="date" name="date_from" id="date_from" value="{{ date_from }}">
+        <label for="date_to">تا تاریخ:</label>
+        <input type="date" name="date_to" id="date_to" value="{{ date_to }}">
+        <button type="submit">اعمال</button>
+      </form>
+      {% if ledger_rows %}
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>تاریخ</th>
+              <th>شرح تراکنش</th>
+              <th>شرح ردیف</th>
+              <th>بدهکار</th>
+              <th>بستانکار</th>
+              <th>مانده تجمعی</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in ledger_rows %}
+              <tr>
+                <td>{{ row.entry.transaction.date|shamsi_date }}</td>
+                <td>{{ row.entry.transaction.description|truncatewords:6 }}</td>
+                <td>{{ row.entry.description|default:"—"|truncatewords:5 }}</td>
+                <td class="num">{{ row.debit|floatformat:0|intcomma }}</td>
+                <td class="num">{{ row.credit|floatformat:0|intcomma }}</td>
+                <td class="num {% if row.running_balance >= 0 %}positive{% else %}negative{% endif %}">
+                  {{ row.running_balance|floatformat:0|intcomma }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">در این بازه زمانی ثبت دفتری برای این حساب وجود ندارد.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

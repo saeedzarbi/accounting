@@ -36,6 +36,7 @@ class TransactionType(models.Model):
 class Deals(models.Model):
     STATUS_CHOICES = (
         ("init", "تعریف اولیه"),
+        ("consultant_pending", "در انتظار تایید مشاور"),
         ("pending", "در انتظار تایید مدیر بنگاه"),
         ("approved", "تایید شده"),
         ("rejected", "رد شده"),
@@ -80,7 +81,7 @@ class Deals(models.Model):
     description = models.TextField(blank=True, default="")
     date = models.CharField(max_length=20, blank=True, default="")
     consultants = models.ManyToManyField(
-        Consultant, related_name="consultants_deals", null=True, blank=True
+        Consultant, related_name="consultants_deals", blank=True
     )
     created_at = models.DateTimeField(default=timezone.now)
     rejection_reason = models.TextField(blank=True, default="", verbose_name="علت رد")
@@ -304,6 +305,48 @@ class CommissionSplit(models.Model):
             self.amount = 0
 
         super().save(*args, **kwargs)
+
+
+class DealConsultantApproval(models.Model):
+    class ApprovalStatus(models.TextChoices):
+        PENDING = "pending", "در انتظار نظر مشاور"
+        APPROVED = "approved", "تایید شده"
+        REVIEW = "review", "نیازمند بررسی مدیر"
+
+    deal = models.ForeignKey(
+        Deals,
+        on_delete=models.CASCADE,
+        related_name="consultant_approvals",
+        verbose_name="معامله",
+    )
+    consultant = models.ForeignKey(
+        Consultant,
+        on_delete=models.CASCADE,
+        related_name="deal_approvals",
+        verbose_name="مشاور",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.PENDING,
+        verbose_name="وضعیت تایید",
+    )
+    suggested_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="مبلغ پیشنهادی مشاور (تومان)",
+    )
+    note = models.TextField(blank=True, default="", verbose_name="توضیحات مشاور")
+    responded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [["deal", "consultant"]]
+
+    def __str__(self):
+        return f"{self.deal_id} - {self.consultant.name} ({self.get_status_display()})"
 
 
 class ContractTemplate(models.Model):
